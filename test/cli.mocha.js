@@ -228,7 +228,7 @@ describe('cli', function () {
   it('should timeout when an http resource returns 404', function (done) {
     var opts = {
       resources: [
-        'http://localhost:3000'
+        'http://localhost:3998'
       ],
       timeout: 1000,
       interval: 100,
@@ -241,7 +241,7 @@ describe('cli', function () {
           res.statusCode = 404;
           res.end('data');
         });
-      httpServer.listen(3000, 'localhost');
+      httpServer.listen(3998, 'localhost');
     }, 300);
     execCLI(opts.resources.concat(FAST_OPTS), {})
       .on('exit', function (code) {

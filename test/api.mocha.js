@@ -104,8 +104,8 @@ describe('api', function () {
   it('should succeed when a service is listening to tcp port', function (done) {
     var opts = {
       resources: [
-        'tcp:localhost:3000',
-        'tcp:3000'
+        'tcp:localhost:3001',
+        'tcp:3001'
       ]
     };
 
@@ -114,7 +114,7 @@ describe('api', function () {
           .on('request', function (req, res) {
             res.end('data');
           });
-      httpServer.listen(3000, 'localhost');
+      httpServer.listen(3001, 'localhost');
     }, 300);
 
     waitOn(opts, function (err) {
@@ -206,7 +206,7 @@ describe('api', function () {
   it('should timeout when an http resource returns 404', function (done) {
     var opts = {
       resources: [
-        'http://localhost:3000'
+        'http://localhost:3002'
       ],
       timeout: 1000,
       interval: 100,
@@ -219,7 +219,7 @@ describe('api', function () {
           res.statusCode = 404;
           res.end('data');
         });
-      httpServer.listen(3000, 'localhost');
+      httpServer.listen(3002, 'localhost');
     }, 300);
 
     waitOn(opts, function (err) {
