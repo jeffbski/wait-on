@@ -1,0 +1,50 @@
+{
+  "name": "wait-on",
+  "description": "wait-on is a command line utility and Node.js API which will wait for files, ports, sockets, and http(s) resources to become available",
+  "version": "0.0.1",
+  "main": "lib/wait-on",
+  "bin": {
+    "wait-on": "bin/wait-on"
+  },
+  "author": "Jeff Barczewski <info@codewinds.com>",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/jeffbski/wait-on.git"
+  },
+  "bugs": {
+    "url": "http://github.com/jeffbski/wait-on/issues"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha 'test/**/*.mocha.js'"
+  },
+  "engines": {
+    "node": ">=0.10"
+  },
+  "devDependencies": {
+    "accum": "^0.3.6",
+    "expect": "^1.8.0",
+    "mocha": "^2.2.5",
+    "temp": "^0.8.3"
+  },
+  "dependencies": {
+    "core-js": "^1.0.0",
+    "joi": "^6.6.0",
+    "minimist": "^1.1.1",
+    "request": "^2.60.0",
+    "rx": "^2.5.3"
+  },
+  "keywords": [
+    "wait",
+    "delay",
+    "cli",
+    "files",
+    "tcp",
+    "ports",
+    "sockets",
+    "http",
+    "exist",
+    "ready",
+    "available"
+  ]
+}

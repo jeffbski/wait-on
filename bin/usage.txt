@@ -1,0 +1,54 @@
+Usage: wait-on {OPTIONS} resource [...resource]
+
+Description:
+
+     wait-on is a command line utility which will wait for files, ports,
+     sockets, and http(s) resources to become available. Exits with
+     success code (0) when all resources are ready. Non-zero exit code
+     if interrupted or timed out.
+
+     In shell combine with && to conditionally run another command
+     once resources are available. ex: wait-on f1 && NEXT_CMD
+
+     resources types are defined by their prefix, if no prefix is
+     present, the resource is assumed to be of type 'file'
+
+     resource prefixes are:
+
+       file:   - regular file (also default type). ex: file:/path/to/file
+       http:   - HTTP HEAD returns 2XX response. ex: http://m.com:90/foo
+       https:  - HTTPS HEAD returns 2XX response. ex: https://my/bar
+       tcp:    - TCP port is listening. ex: 1.2.3.4:9000 or foo.com:700
+       socket: - Domain Socket is listening. ex: socket:/path/to/sock
+                 For http over socket, use http://unix:SOCK_PATH:URL_PATH
+                   like http://unix:/path/to/sock:/foo/bar
+
+Standard Options:
+
+ -d, --delay
+
+  Initial delay before checking for resources in ms, default 0
+
+ -i, --interval
+
+  Interval to poll resources in ms, default 250ms
+
+ -t, --timeout
+
+  Maximum time in ms to wait before exiting with failure (1) code,
+  default Infinity
+
+ -v, --verbose
+
+  Enable debug output to stdout
+
+ -w, --window
+
+  Stability window, the time in ms defining the window of time that
+  resource needs to have not changed (file size or availability) before
+  signalling success, default 750ms. If less than interval, it will be
+  reset to the value of interval.
+
+ -h, --help
+
+  Show this message
