@@ -324,6 +324,37 @@ describe('api', function () {
     });
   });
 
+  it('should timeout when an http service listening to a socket is too slow', function (done) {
+    var socketPath;
+    temp.mkdir({}, function (err, dirPath) {
+      socketPath = path.resolve(dirPath, 'sock');
+      var opts = {
+        resources: [
+          'package.json',
+          'http://unix:' + socketPath + ':/',
+          'http://unix:' + socketPath + ':/foo'
+        ],
+        timeout: 1000,
+        interval: 100,
+        window: 100
+      };
+
+      httpServer = http.createServer()
+        .on('request', function (req, res) {
+          setTimeout(function () {
+            // res.statusCode = 404;
+            res.end('data');
+          }, 1100);
+        });
+      httpServer.listen(socketPath);
+
+      waitOn(opts, function (err) {
+        expect(err).toExist();
+        done();
+      });
+    });
+  });
+
 
 
 
