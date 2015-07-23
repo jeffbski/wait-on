@@ -253,7 +253,7 @@ describe('cli', function () {
   it('should timeout when an http resource is not available', function (done) {
     var opts = {
       resources: [
-        'http://localhost:3000'
+        'http://localhost:3999'
       ],
       timeout: 1000,
       interval: 100,
