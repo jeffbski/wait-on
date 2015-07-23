@@ -9,9 +9,6 @@ var temp = require('temp');
 var mocha = require('mocha');
 var describe = mocha.describe;
 var it = mocha.it;
-var before = mocha.before;
-var beforeEach = mocha.beforeEach;
-var after = mocha.after;
 var afterEach = mocha.afterEach;
 var expect = require('expect');
 
