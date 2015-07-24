@@ -19,7 +19,6 @@ var minimistOpts = {
 
 var argv = minimist(process.argv.slice(2), minimistOpts);
 
-console.log('argv', argv);
 
 if (argv.help || !argv._.length) { // help
   return fs.createReadStream(__dirname + '/usage.txt')
