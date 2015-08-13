@@ -35,6 +35,7 @@ wait-on http://localhost:8000/foo && NEXT_CMD # wait for http 2XX HEAD
 wait-on https://myserver/foo && NEXT_CMD # wait for https 2XX HEAD
 wait-on tcp:4000 && NEXT_CMD # wait for service to listen on a TCP port
 wait-on socket:/path/mysock # wait for service to listen on domain socket
+wait-on http://unix:/var/SOCKPATH:/a/foo # wait for http on domain socket
 ```
 
 ```
@@ -104,7 +105,8 @@ var opts = {
     'http://foo.com:8000/bar',
     'https://my.com/cat',
     'tcp:foo.com:8000',
-    'socket:/my/sock'
+    'socket:/my/sock',
+    'http://unix:/my/sock:/my/url'
   ],
   delay: 1000, // initial delay in ms, default 0
   interval: 100, // poll interval in ms, default 250ms
