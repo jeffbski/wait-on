@@ -1,6 +1,6 @@
 # wait-on - wait for files, ports, sockets, http(s) resources
 
-wait-on is a command line utility which will wait for files, ports, sockets, and http(s) resources to become available. Functionality is also available via a Node.js API
+wait-on is a command line utility which will wait for files, ports, sockets, and http(s) resources to become available. Functionality is also available via a Node.js API. Cross-platform runs everywhere Node.js runs (linux, unix, mac OS X, windows)
 
 wait-on will wait for period of time for a file to stop growing before triggering availability which is good for monitoring files that are being built. Likewise wait-on will wait for period of time for other resources to remain available before triggering success.
 
@@ -137,6 +137,7 @@ waitOn(opts, cb) - function which triggers resource checks
  - wait for services to be listening on unix domain sockets
  - configurable initial delay, poll interval, stabilization window, timeout
  - command line utility returns success code (0) when resources are availble
+ - cross platform - runs anywhere Node.js runs (linux, unix, mac OS X, windows)
 
 ## Why
 
