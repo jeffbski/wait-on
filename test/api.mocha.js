@@ -86,6 +86,28 @@ describe('api', function () {
     });
   });
 
+  it('should succeed when http GET resources become available later', function (done) {
+    var opts = {
+      resources: [
+        'http-get://localhost:3011',
+        'http-get://localhost:3011/foo'
+      ]
+    };
+
+    setTimeout(function () {
+      httpServer = http.createServer()
+          .on('request', function (req, res) {
+            res.end('data');
+          });
+      httpServer.listen(3011, 'localhost');
+    }, 300);
+
+    waitOn(opts, function (err) {
+      expect(err).toNotExist();
+      done();
+    });
+  });
+
   /*
   it('should succeed when an https resource is available', function (done) {
     var opts = {
@@ -99,7 +121,21 @@ describe('api', function () {
       done();
     });
   });
+
+  it('should succeed when an https GET resource is available', function (done) {
+    var opts = {
+      resources: [
+        'https-get://www.google.com'
+      ]
+    };
+
+    waitOn(opts, function (err) {
+      expect(err).toNotExist();
+      done();
+    });
+  });
   */
+
 
   it('should succeed when a service is listening to tcp port', function (done) {
     var opts = {
@@ -153,6 +189,32 @@ describe('api', function () {
         resources: [
           'http://unix:' + socketPath + ':/',
           'http://unix:' + socketPath + ':/foo'
+        ]
+      };
+
+      setTimeout(function () {
+        httpServer = http.createServer()
+          .on('request', function (req, res) {
+            res.end('data');
+          });
+        httpServer.listen(socketPath);
+      }, 300);
+
+      waitOn(opts, function (err) {
+        expect(err).toNotExist();
+        done();
+      });
+    });
+  });
+
+  it('should succeed when a http GET service is listening to a socket', function (done) {
+    var socketPath;
+    temp.mkdir({}, function (err, dirPath) {
+      socketPath = path.resolve(dirPath, 'sock');
+      var opts = {
+        resources: [
+          'http-get://unix:' + socketPath + ':/',
+          'http-get://unix:' + socketPath + ':/foo'
         ]
       };
 
@@ -231,7 +293,23 @@ describe('api', function () {
   it('should timeout when an http resource is not available', function (done) {
     var opts = {
       resources: [
-        'http://localhost:3000'
+        'http://localhost:3010'
+      ],
+      timeout: 1000,
+      interval: 100,
+      window: 100
+    };
+
+    waitOn(opts, function (err) {
+      expect(err).toExist();
+      done();
+    });
+  });
+
+  it('should timeout when an http GET resource is not available', function (done) {
+    var opts = {
+      resources: [
+        'http-get://localhost:3010'
       ],
       timeout: 1000,
       interval: 100,
@@ -247,7 +325,23 @@ describe('api', function () {
   it('should timeout when an https resource is not available', function (done) {
     var opts = {
       resources: [
-        'https://localhost:3000/foo/bar'
+        'https://localhost:3010/foo/bar'
+      ],
+      timeout: 1000,
+      interval: 100,
+      window: 100
+    };
+
+    waitOn(opts, function (err) {
+      expect(err).toExist();
+      done();
+    });
+  });
+
+  it('should timeout when an https GET resource is not available', function (done) {
+    var opts = {
+      resources: [
+        'https-get://localhost:3010/foo/bar'
       ],
       timeout: 1000,
       interval: 100,
@@ -263,7 +357,7 @@ describe('api', function () {
   it('should timeout when a service is not listening to tcp port', function (done) {
     var opts = {
       resources: [
-        'tcp:localhost:3000'
+        'tcp:localhost:3010'
       ],
       timeout: 1000
     };

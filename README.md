@@ -4,7 +4,7 @@ wait-on is a cross-platform command line utility which will wait for files, port
 
 wait-on will wait for period of time for a file to stop growing before triggering availability which is good for monitoring files that are being built. Likewise wait-on will wait for period of time for other resources to remain available before triggering success.
 
-For http(s) resources wait-on will check that the requests are returning 2XX (success) to HEAD requests (after following any redirects).
+For http(s) resources wait-on will check that the requests are returning 2XX (success) to HEAD or GET requests (after following any redirects).
 
 [![Build Status](https://secure.travis-ci.org/jeffbski/wait-on.png?branch=master)](http://travis-ci.org/jeffbski/wait-on)
 
@@ -33,9 +33,12 @@ wait-on file1 && NEXT_CMD # wait for file1, then exec NEXT_CMD
 wait-on f1 f2 && NEXT_CMD # wait for both f1 and f2, the exec NEXT_CMD
 wait-on http://localhost:8000/foo && NEXT_CMD # wait for http 2XX HEAD
 wait-on https://myserver/foo && NEXT_CMD # wait for https 2XX HEAD
+wait-on http-get://localhost:8000/foo && NEXT_CMD # wait for http 2XX GET
+wait-on https-get://myserver/foo && NEXT_CMD # wait for https 2XX GET
 wait-on tcp:4000 && NEXT_CMD # wait for service to listen on a TCP port
 wait-on socket:/path/mysock # wait for service to listen on domain socket
-wait-on http://unix:/var/SOCKPATH:/a/foo # wait for http on domain socket
+wait-on http://unix:/var/SOCKPATH:/a/foo # wait for http HEAD on domain socket
+wait-on http-get://unix:/var/SOCKPATH:/a/foo # wait for http GET on domain socket
 ```
 
 ```
@@ -56,13 +59,16 @@ Description:
 
      resource prefixes are:
 
-       file:   - regular file (also default type). ex: file:/path/to/file
-       http:   - HTTP HEAD returns 2XX response. ex: http://m.com:90/foo
-       https:  - HTTPS HEAD returns 2XX response. ex: https://my/bar
-       tcp:    - TCP port is listening. ex: 1.2.3.4:9000 or foo.com:700
-       socket: - Domain Socket is listening. ex: socket:/path/to/sock
-                 For http over socket, use http://unix:SOCK_PATH:URL_PATH
-                   like http://unix:/path/to/sock:/foo/bar
+       file:      - regular file (also default type). ex: file:/path/to/file
+       http:      - HTTP HEAD returns 2XX response. ex: http://m.com:90/foo
+       https:     - HTTPS HEAD returns 2XX response. ex: https://my/bar
+       http-get:  - HTTP GET returns 2XX response. ex: http://m.com:90/foo
+       https-get: - HTTPS GET returns 2XX response. ex: https://my/bar
+       tcp:       - TCP port is listening. ex: 1.2.3.4:9000 or foo.com:700
+       socket:    - Domain Socket is listening. ex: socket:/path/to/sock
+                    For http over socket, use http://unix:SOCK_PATH:URL_PATH
+                    like http://unix:/path/to/sock:/foo/bar or
+                         http-get://unix:/path/to/sock:/foo/bar
 
 Standard Options:
 
@@ -104,9 +110,12 @@ var opts = {
     'file1',
     'http://foo.com:8000/bar',
     'https://my.com/cat',
+    'http-get://foo.com:8000/bar',
+    'https-get://my.com/cat',
     'tcp:foo.com:8000',
     'socket:/my/sock',
-    'http://unix:/my/sock:/my/url'
+    'http://unix:/my/sock:/my/url',
+    'http-get://unix:/my/sock:/my/url'
   ],
   delay: 1000, // initial delay in ms, default 0
   interval: 100, // poll interval in ms, default 250ms
@@ -135,6 +144,7 @@ waitOn(opts, cb) - function which triggers resource checks
  - simple command line utility and Node.js API for waiting for resources
  - wait for files to stabilize
  - wait for http(s) resources to return 2XX in response to HEAD request
+ - wait for http(s) resources to return 2XX in response to GET request
  - wait for services to be listening on tcp ports
  - wait for services to be listening on unix domain sockets
  - configurable initial delay, poll interval, stabilization window, timeout

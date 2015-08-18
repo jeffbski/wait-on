@@ -99,6 +99,29 @@ describe('cli', function () {
       });
   });
 
+  it('should succeed when http GET resources become available later', function (done) {
+    var opts = {
+      resources: [
+        'http-get://localhost:8124',
+        'http-get://localhost:8124/foo'
+      ]
+    };
+
+    setTimeout(function () {
+      httpServer = http.createServer()
+          .on('request', function (req, res) {
+            res.end('data');
+          });
+      httpServer.listen(8124, 'localhost');
+    }, 300);
+
+    execCLI(opts.resources.concat(FAST_OPTS), {})
+      .on('exit', function (code) {
+        expect(code).toBe(0);
+        done();
+      });
+  });
+
   /*
   it('should succeed when an https resource is available', function (done) {
     var opts = {
@@ -169,6 +192,33 @@ describe('cli', function () {
         resources: [
           'http://unix:' + socketPath + ':/',
           'http://unix:' + socketPath + ':/foo'
+        ]
+      };
+
+      setTimeout(function () {
+        httpServer = http.createServer()
+          .on('request', function (req, res) {
+            res.end('data');
+          });
+        httpServer.listen(socketPath);
+      }, 300);
+
+      execCLI(opts.resources.concat(FAST_OPTS), {})
+        .on('exit', function (code) {
+          expect(code).toBe(0);
+          done();
+        });
+    });
+  });
+
+  it('should succeed when a http GET service is listening to a socket', function (done) {
+    var socketPath;
+    temp.mkdir({}, function (err, dirPath) {
+      socketPath = path.resolve(dirPath, 'sock');
+      var opts = {
+        resources: [
+          'http-get://unix:' + socketPath + ':/',
+          'http-get://unix:' + socketPath + ':/foo'
         ]
       };
 
@@ -264,10 +314,44 @@ describe('cli', function () {
       });
   });
 
+  it('should timeout when an http GET resource is not available', function (done) {
+    var opts = {
+      resources: [
+        'http-get://localhost:3999'
+      ],
+      timeout: 1000,
+      interval: 100,
+      window: 100
+    };
+
+    execCLI(opts.resources.concat(FAST_OPTS), {})
+      .on('exit', function (code) {
+        expect(code).toNotBe(0);
+        done();
+      });
+  });
+
   it('should timeout when an https resource is not available', function (done) {
     var opts = {
       resources: [
-        'https://localhost:3000/foo/bar'
+        'https://localhost:3010/foo/bar'
+      ],
+      timeout: 1000,
+      interval: 100,
+      window: 100
+    };
+
+    execCLI(opts.resources.concat(FAST_OPTS), {})
+      .on('exit', function (code) {
+        expect(code).toNotBe(0);
+        done();
+      });
+  });
+
+  it('should timeout when an https GET resource is not available', function (done) {
+    var opts = {
+      resources: [
+        'https-get://localhost:3010/foo/bar'
       ],
       timeout: 1000,
       interval: 100,
@@ -284,7 +368,7 @@ describe('cli', function () {
   it('should timeout when a service is not listening to tcp port', function (done) {
     var opts = {
       resources: [
-        'tcp:localhost:3000'
+        'tcp:localhost:3010'
       ],
       timeout: 1000
     };
