@@ -36,6 +36,10 @@ Standard Options:
 
   Interval to poll resources in ms, default 250ms
 
+ -l, --log
+
+  Log resources begin waited on and when complete or errored
+
  -t, --timeout
 
   Maximum time in ms to wait before exiting with failure (1) code,

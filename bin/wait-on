@@ -6,10 +6,11 @@ var waitOn = require('../');
 
 var minimistOpts = {
   string: ['d', 'i', 't', 'w'],
-  boolean: ['h', 'v'],
+  boolean: ['h', 'l', 'v'],
   alias: {
     d: 'delay',
     i: 'interval',
+    l: 'log',
     t: 'timeout',
     v: 'verbose',
     w: 'window',
@@ -27,7 +28,7 @@ if (argv.help || !argv._.length) { // help
 }
 
 var opts = { resources: argv._ };
-opts = ['delay', 'interval', 'timeout', 'verbose', 'window']
+opts = ['delay', 'interval', 'log', 'timeout', 'verbose', 'window']
   .reduce(function (accum, x) {
     if (argv[x]) { accum[x] = argv[x]; }
     return accum;

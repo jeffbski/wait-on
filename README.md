@@ -80,6 +80,10 @@ Standard Options:
 
   Interval to poll resources in ms, default 250ms
 
+ -l, --log
+
+  Log resources begin waited on and when complete or errored
+
  -t, --timeout
 
   Maximum time in ms to wait before exiting with failure (1) code,
@@ -133,6 +137,7 @@ waitOn(opts, cb) - function which triggers resource checks
  - opts.resources - array of string resources to wait for. prefix determines the type of resource with the default type of `file:`
  - opts.delay - optional initial delay in ms, default 0
  - opts.interval - optional poll resource interval in ms, default 250ms
+ - opts.log - optional flag which outputs to stdout, remaining resources waited on and when complete or errored
  - opts.timeout - optional timeout in ms, default Infinity. Aborts with error.
  - opts.verbose - optional flag which outputs debug output, default false
  - opts.window - optional stabilization time in ms, default 750ms. Waits this amount of time for file sizes to stabilize or other resource availability to remain unchanged.
