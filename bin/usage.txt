@@ -7,6 +7,11 @@ Description:
      success code (0) when all resources are ready. Non-zero exit code
      if interrupted or timed out.
 
+     Options may also be specified in a config file (js or json). For
+     example --config configFile.js would result in configFile.js being
+     required and the resulting object will be merged with any
+     command line options before wait-on is called. See exampleConfig.js
+
      In shell combine with && to conditionally run another command
      once resources are available. ex: wait-on f1 && NEXT_CMD
 
@@ -27,6 +32,10 @@ Description:
                          http-get://unix:/path/to/sock:/foo/bar
 
 Standard Options:
+
+ -c, --config
+
+  js or json config file, useful for http(s) options
 
  -d, --delay
 

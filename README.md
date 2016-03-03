@@ -51,6 +51,11 @@ Description:
      success code (0) when all resources are ready. Non-zero exit code
      if interrupted or timed out.
 
+     Options may also be specified in a config file (js or json). For
+     example --config configFile.js would result in configFile.js being
+     required and the resulting object will be merged with any
+     command line options before wait-on is called. See exampleConfig.js
+
      In shell combine with && to conditionally run another command
      once resources are available. ex: wait-on f1 && NEXT_CMD
 
@@ -71,6 +76,10 @@ Description:
                          http-get://unix:/path/to/sock:/foo/bar
 
 Standard Options:
+
+ -c, --config
+
+  js or json config file, useful for http(s) options
 
  -d, --delay
 
@@ -125,6 +134,23 @@ var opts = {
   interval: 100, // poll interval in ms, default 250ms
   timeout: 30000, // timeout in ms, default Infinity
   window: 1000, // stabilization time in ms, default 750ms
+
+  // http options
+  ca: [ /* strings or binaries */ ],
+  cert: [ /* strings or binaries */ ],
+  key: [ /* strings or binaries */ ],
+  passphrase: 'yourpassphrase',
+  auth: {
+    user: 'theuser', // or username
+    pass: 'thepassword' // or password
+  },
+  httpSignature: {
+    keyId: 'yourKeyId',
+    key: 'yourKey'
+  },
+  strictSSL: false,
+  followAllRedirects: true,
+  followRedirect: true
 };
 waitOn(opts, function (err) {
   if (err) { return handleError(err); }
@@ -141,6 +167,17 @@ waitOn(opts, cb) - function which triggers resource checks
  - opts.timeout - optional timeout in ms, default Infinity. Aborts with error.
  - opts.verbose - optional flag which outputs debug output, default false
  - opts.window - optional stabilization time in ms, default 750ms. Waits this amount of time for file sizes to stabilize or other resource availability to remain unchanged.
+ - http(s) specific options, see https://github.com/request/request#readme for specific details
+   - opts.ca: [ /* strings or binaries */ ],
+   - opts.cert: [ /* strings or binaries */ ],
+   - opts.key: [ /* strings or binaries */ ],
+   - opts.passphrase: 'yourpassphrase',
+   - opts.auth: { user, pass }
+   - opts.httpSignature: { keyId, key }
+   - opts.strictSSL: false,
+   - opts.followAllRedirects: true,
+   - opts.followRedirect: true
+
  - cb(err) - if err is provided then, resource checks did not succeed
 
 

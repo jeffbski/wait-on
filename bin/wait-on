@@ -2,12 +2,14 @@
 
 var fs = require('fs');
 var minimist = require('minimist');
+var path = require('path');
 var waitOn = require('../');
 
 var minimistOpts = {
-  string: ['d', 'i', 't', 'w'],
+  string: ['c', 'd', 'i', 't', 'w'],
   boolean: ['h', 'l', 'v'],
   alias: {
+    c: 'config',
     d: 'delay',
     i: 'interval',
     l: 'log',
@@ -27,7 +29,18 @@ if (argv.help || !argv._.length) { // help
     .on('close', function () { process.exit(1); });
 }
 
-var opts = { resources: argv._ };
+var opts = {};
+
+// if a js/json configuration file is provided require it
+var configFile = argv.config;
+if (configFile) {
+  opts = require(path.resolve(configFile));
+}
+
+// add in the resources listed on the command line
+opts.resources = argv._;
+
+// now check for specific options and set those
 opts = ['delay', 'interval', 'log', 'timeout', 'verbose', 'window']
   .reduce(function (accum, x) {
     if (argv[x]) { accum[x] = argv[x]; }
