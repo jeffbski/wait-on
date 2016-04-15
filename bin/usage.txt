@@ -3,9 +3,9 @@ Usage: wait-on {OPTIONS} resource [...resource]
 Description:
 
      wait-on is a command line utility which will wait for files, ports,
-     sockets, and http(s) resources to become available. Exits with
-     success code (0) when all resources are ready. Non-zero exit code
-     if interrupted or timed out.
+     sockets, and http(s) resources to become available (or not available
+     using reverse flag). Exits with  success code (0) when all resources
+     are ready. Non-zero exit code if interrupted or timed out.
 
      Options may also be specified in a config file (js or json). For
      example --config configFile.js would result in configFile.js being
@@ -48,6 +48,10 @@ Standard Options:
  -l, --log
 
   Log resources begin waited on and when complete or errored
+
+ -r, --reverse
+
+  Reverse operation, wait for resources to NOT be available
 
  -t, --timeout
 

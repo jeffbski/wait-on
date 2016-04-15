@@ -449,6 +449,62 @@ describe('api', function () {
     });
   });
 
+    it('should succeed when file resources are not available in reverse mode', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        var opts = {
+          resources: [
+            path.resolve(dirPath, 'foo'),
+            path.resolve(dirPath, 'bar')
+          ],
+          reverse: true
+        };
+        waitOn(opts, function (err) {
+          expect(err).toNotExist();
+          done();
+        });
+      });
+    });
+
+    it('should succeed when file resources are not available later in reverse mode', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        var opts = {
+          resources: [
+            path.resolve(dirPath, 'foo'),
+            path.resolve(dirPath, 'bar')
+          ],
+          reverse: true
+        };
+        fs.writeFileSync(opts.resources[0], 'data1');
+        fs.writeFileSync(opts.resources[1], 'data2');
+        setTimeout(function () {
+          fs.unlinkSync(opts.resources[0]);
+          fs.unlinkSync(opts.resources[1]);
+        }, 300);
+        waitOn(opts, function (err) {
+          expect(err).toNotExist();
+          done();
+        });
+      });
+    });
+
+    it('should timeout when file resources are available in reverse mode', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        var opts = {
+          resources: [
+            path.resolve(dirPath, 'foo'),
+            path.resolve(dirPath, 'bar')
+          ],
+          reverse: true,
+          timeout: 1000
+        };
+        fs.writeFileSync(opts.resources[0], 'data1');
+        fs.writeFileSync(opts.resources[1], 'data2');
+        waitOn(opts, function (err) {
+          expect(err).toExist();
+          done();
+        });
+      });
+    });
 
 
 

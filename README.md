@@ -26,6 +26,8 @@ Use from command line or using Node.js programmatic API.
 
 Assuming NEXT_CMD is the command to run when resources are available, then wait-on will wait and then exit with successfull exit code (0) once all resrouces are available causing NEXT_CMD to be run.
 
+wait-on can also be used in reverse mode which waits for resources to NOT be available. This is useful in waiting for services to shutdown before continuing. (Thanks @skarbovskiy for adding)
+
 If wait-on is interrupted before all resources are available, it will exit with non-zero exit code and thus NEXT_CMD will not be run.
 
 ```bash
@@ -47,9 +49,9 @@ Usage: wait-on {OPTIONS} resource [...resource]
 Description:
 
      wait-on is a command line utility which will wait for files, ports,
-     sockets, and http(s) resources to become available. Exits with
-     success code (0) when all resources are ready. Non-zero exit code
-     if interrupted or timed out.
+     sockets, and http(s) resources to become available (or not available
+     using reverse flag). Exits with  success code (0) when all resources
+     are ready. Non-zero exit code if interrupted or timed out.
 
      Options may also be specified in a config file (js or json). For
      example --config configFile.js would result in configFile.js being
@@ -92,6 +94,10 @@ Standard Options:
  -l, --log
 
   Log resources begin waited on and when complete or errored
+
+ -r, --reverse
+
+  Reverse operation, wait for resources to NOT be available
 
  -t, --timeout
 
@@ -164,6 +170,7 @@ waitOn(opts, cb) - function which triggers resource checks
  - opts.delay - optional initial delay in ms, default 0
  - opts.interval - optional poll resource interval in ms, default 250ms
  - opts.log - optional flag which outputs to stdout, remaining resources waited on and when complete or errored
+ - opts.reverse - optional flag to reverse operation so checks are for resources being NOT available, default false
  - opts.timeout - optional timeout in ms, default Infinity. Aborts with error.
  - opts.verbose - optional flag which outputs debug output, default false
  - opts.window - optional stabilization time in ms, default 750ms. Waits this amount of time for file sizes to stabilize or other resource availability to remain unchanged.
@@ -191,6 +198,7 @@ waitOn(opts, cb) - function which triggers resource checks
  - wait for services to be listening on unix domain sockets
  - configurable initial delay, poll interval, stabilization window, timeout
  - command line utility returns success code (0) when resources are availble
+ - command line utility that can also wait for resources to not be available using reverse flag. This is useful for waiting for services to shutdown before continuing.
  - cross platform - runs anywhere Node.js runs (linux, unix, mac OS X, windows)
 
 ## Why
