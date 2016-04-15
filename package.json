@@ -1,7 +1,7 @@
 {
   "name": "wait-on",
   "description": "wait-on is a cross platform command line utility and Node.js API which will wait for files, ports, sockets, and http(s) resources to become available",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "main": "lib/wait-on",
   "bin": {
     "wait-on": "bin/wait-on"
