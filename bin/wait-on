@@ -7,12 +7,13 @@ var waitOn = require('../');
 
 var minimistOpts = {
   string: ['c', 'd', 'i', 't', 'w'],
-  boolean: ['h', 'l', 'v'],
+  boolean: ['h', 'l', 'r', 'v'],
   alias: {
     c: 'config',
     d: 'delay',
     i: 'interval',
     l: 'log',
+    r: 'reverse',
     t: 'timeout',
     v: 'verbose',
     w: 'window',
@@ -41,7 +42,7 @@ if (configFile) {
 opts.resources = argv._;
 
 // now check for specific options and set those
-opts = ['delay', 'interval', 'log', 'timeout', 'verbose', 'window']
+opts = ['delay', 'interval', 'log', 'reverse', 'timeout', 'verbose', 'window']
   .reduce(function (accum, x) {
     if (argv[x]) { accum[x] = argv[x]; }
     return accum;

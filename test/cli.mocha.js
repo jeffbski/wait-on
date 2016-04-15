@@ -432,4 +432,64 @@ describe('cli', function () {
     });
   });
 
+
+  it('should succeed when file resources are not available in reverse mode', function (done) {
+    temp.mkdir({}, function (err, dirPath) {
+      var opts = {
+        resources: [
+          path.resolve(dirPath, 'foo'),
+          path.resolve(dirPath, 'bar')
+        ],
+      };
+      var OPTS = FAST_OPTS.concat(['-r']);
+      execCLI(opts.resources.concat(OPTS), {})
+        .on('exit', function (code) {
+          expect(code).toBe(0);
+          done();
+        });
+    });
+  });
+
+  it('should succeed when file resources are not available later in reverse mode', function (done) {
+    temp.mkdir({}, function (err, dirPath) {
+      var opts = {
+        resources: [
+          path.resolve(dirPath, 'foo'),
+          path.resolve(dirPath, 'bar')
+        ],
+      };
+      fs.writeFileSync(opts.resources[0], 'data1');
+      fs.writeFileSync(opts.resources[1], 'data2');
+      setTimeout(function () {
+        fs.unlinkSync(opts.resources[0]);
+        fs.unlinkSync(opts.resources[1]);
+      }, 300);
+      var OPTS = FAST_OPTS.concat(['-r']);
+      execCLI(opts.resources.concat(OPTS), {})
+        .on('exit', function (code) {
+          expect(code).toBe(0);
+          done();
+        });
+    });
+  });
+
+  it('should timeout when file resources are available in reverse mode', function (done) {
+    temp.mkdir({}, function (err, dirPath) {
+      var opts = {
+        resources: [
+          path.resolve(dirPath, 'foo'),
+          path.resolve(dirPath, 'bar')
+        ],
+      };
+      fs.writeFileSync(opts.resources[0], 'data1');
+      fs.writeFileSync(opts.resources[1], 'data2');
+      var OPTS = FAST_OPTS.concat(['-r']);
+      execCLI(opts.resources.concat(OPTS), {})
+        .on('exit', function (code) {
+          expect(code).toNotBe(0);
+          done();
+        });
+    });
+  });
+
 });
