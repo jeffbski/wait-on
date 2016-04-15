@@ -6,6 +6,8 @@ wait-on will wait for period of time for a file to stop growing before triggerin
 
 For http(s) resources wait-on will check that the requests are returning 2XX (success) to HEAD or GET requests (after following any redirects).
 
+wait-on can also be used in reverse mode which waits for resources to NOT be available. This is useful in waiting for services to shutdown before continuing. (Thanks @skarbovskiy for adding)
+
 [![Build Status](https://secure.travis-ci.org/jeffbski/wait-on.png?branch=master)](http://travis-ci.org/jeffbski/wait-on)
 
 ## Installation
