@@ -1,6 +1,6 @@
 {
   "name": "wait-on",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "dependencies": {
     "core-js": {
       "version": "1.0.0",
