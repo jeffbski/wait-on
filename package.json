@@ -24,15 +24,15 @@
   "devDependencies": {
     "accum": "^0.3.6",
     "expect": "^1.8.0",
-    "mocha": "^2.2.5",
+    "mocha": "^3.1.2",
     "temp": "^0.8.3"
   },
   "dependencies": {
-    "core-js": "^1.0.0",
+    "core-js": "^2.4.1",
     "joi": "^6.10.1",
-    "minimist": "^1.1.1",
-    "request": "^2.60.0",
-    "rx": "^2.5.3"
+    "minimist": "^1.2.0",
+    "request": "^2.78.0",
+    "rx": "^4.1.0"
   },
   "keywords": [
     "wait",
