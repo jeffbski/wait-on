@@ -12,7 +12,9 @@ wait-on can also be used in reverse mode which waits for resources to NOT be ava
 
 ## Installation
 
-Requires node.js/iojs >= 0.10
+Requires node.js/iojs >= 4.0.0
+
+(For older Node.js engines, use wait-on@1.5.4)
 
 ```bash
 npm install wait-on # local version
