@@ -15,5 +15,8 @@ module.exports = {
   },
   strictSSL: false,
   followAllRedirects: false,
-  followRedirect: false
+  followRedirect: false,
+  headers: {
+    'x-custom': 'headers'
+  }
 };
