@@ -160,7 +160,10 @@ var opts = {
   },
   strictSSL: false,
   followAllRedirects: true,
-  followRedirect: true
+  followRedirect: true,
+  headers: {
+    'x-custom': 'headers'
+  }
 };
 waitOn(opts, function (err) {
   if (err) { return handleError(err); }
@@ -187,7 +190,8 @@ waitOn(opts, cb) - function which triggers resource checks
    - opts.httpSignature: { keyId, key }
    - opts.strictSSL: false,
    - opts.followAllRedirects: true,
-   - opts.followRedirect: true
+   - opts.followRedirect: true,
+   - opts.headers: { 'x-custom': 'headers' },
 
  - cb(err) - if err is provided then, resource checks did not succeed
 
