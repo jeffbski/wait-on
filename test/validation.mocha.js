@@ -6,7 +6,7 @@ var childProcess = require('child_process');
 var mocha = require('mocha');
 var describe = mocha.describe;
 var it = mocha.it;
-var expect = require('expect');
+var expect = require('expect-legacy');
 
 function execCLI(args, options) {
   return childProcess.exec('../bin/wait-on', args, options);
