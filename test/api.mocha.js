@@ -10,7 +10,7 @@ var mocha = require('mocha');
 var describe = mocha.describe;
 var it = mocha.it;
 var afterEach = mocha.afterEach;
-var expect = require('expect');
+var expect = require('expect-legacy');
 
 temp.track(); // cleanup files on exit
 

@@ -16,22 +16,21 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "mocha 'test/**/*.mocha.js'"
+    "test": "mocha --exit 'test/**/*.mocha.js'"
   },
   "engines": {
     "node": ">=4.0.0"
   },
   "devDependencies": {
-    "accum": "^0.3.6",
-    "expect": "^1.8.0",
-    "mocha": "^3.1.2",
+    "expect-legacy": "^1.20.2",
+    "mocha": "^5.2.0",
     "temp": "^0.8.3"
   },
   "dependencies": {
-    "core-js": "^2.4.1",
-    "joi": "^9.2.0",
+    "core-js": "^2.5.7",
+    "joi": "^13.0.0",
     "minimist": "^1.2.0",
-    "request": "^2.78.0",
+    "request": "^2.88.0",
     "rx": "^4.1.0"
   },
   "keywords": [
