@@ -10,7 +10,7 @@ var mocha = require('mocha');
 var describe = mocha.describe;
 var it = mocha.it;
 var afterEach = mocha.afterEach;
-var expect = require('expect-legacy');
+var expect = require('expect');
 
 var CLI_PATH = path.resolve(__dirname, '../bin/wait-on');
 
