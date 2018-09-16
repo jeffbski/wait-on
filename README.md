@@ -167,13 +167,32 @@ var opts = {
     'x-custom': 'headers'
   }
 };
+
+// Usage with callback function
 waitOn(opts, function (err) {
   if (err) { return handleError(err); }
   // once here, all resources are available
 });
+
+// Usage with promises
+waitOn(opts)
+  .then(function () {
+    // once here, all resources are available
+  })
+  .catch(function (err) {
+    handleError(err);
+  });
+
+// Usage with async await
+try {
+  await waitOn(opts);
+  // once here, all resources are available
+} catch (err) {
+  handleError(err);
+}
 ```
 
-waitOn(opts, cb) - function which triggers resource checks
+waitOn(opts, [cb]) - function which triggers resource checks
 
  - opts.resources - array of string resources to wait for. prefix determines the type of resource with the default type of `file:`
  - opts.delay - optional initial delay in ms, default 0

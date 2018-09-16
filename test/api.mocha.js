@@ -506,7 +506,156 @@ describe('api', function () {
       });
     });
 
+    describe('promise support', function () {
+      it('should succeed when file resources are available', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          var opts = {
+            resources: [
+              path.resolve(dirPath, 'foo'),
+              path.resolve(dirPath, 'bar')
+            ]
+          };
+          fs.writeFileSync(opts.resources[0], 'data1');
+          fs.writeFileSync(opts.resources[1], 'data2');
+          waitOn(opts)
+            .then(function () {
+              done();
+            })
+            .catch(function (err) {
+              done(err);
+            });
+        });
+      });
 
+      it('should succeed when file resources are become available later', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          var opts = {
+            resources: [
+              path.resolve(dirPath, 'foo'),
+              path.resolve(dirPath, 'bar')
+            ]
+          };
+    
+          setTimeout(function () {
+            fs.writeFile(opts.resources[0], 'data1', function () {});
+            fs.writeFile(opts.resources[1], 'data2', function () {});
+          }, 300);
+    
+          waitOn(opts)
+            .then(function () {
+              done();
+            })
+            .catch(function (err) {
+              done(err);
+            });
+        });
+      });
 
+      it('should timeout when all resources are not available and timout option is specified', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          var opts = {
+            resources: [ path.resolve(dirPath, 'foo') ],
+            timeout: 1000
+          };
+          waitOn(opts)
+            .then(function () {
+              done(new Error('Should not be resolved'));
+            })
+            .catch(function (err) {
+              expect(err).toExist();
+              done();
+            });
+        });
+      });
+    
+      it('should timeout when some resources are not available and timout option is specified', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          var opts = {
+            resources: [
+              path.resolve(dirPath, 'foo'),
+              path.resolve(dirPath, 'bar')
+            ],
+            timeout: 1000
+          };
+          fs.writeFile(opts.resources[0], 'data', function () {});
+          waitOn(opts)
+            .then(function () {
+              done(new Error('Should not be resolved'));
+            })
+            .catch(function (err) {
+              expect(err).toExist();
+              done();
+            });
+        });
+      });
+
+      it('should succeed when file resources are not available in reverse mode', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          var opts = {
+            resources: [
+              path.resolve(dirPath, 'foo'),
+              path.resolve(dirPath, 'bar')
+            ],
+            reverse: true
+          };
+          waitOn(opts)
+            .then(function () {
+              done();
+            })
+            .catch(function (err) {
+              done(err);
+            });
+        });
+      });
+  
+      it('should succeed when file resources are not available later in reverse mode', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          var opts = {
+            resources: [
+              path.resolve(dirPath, 'foo'),
+              path.resolve(dirPath, 'bar')
+            ],
+            reverse: true
+          };
+          fs.writeFileSync(opts.resources[0], 'data1');
+          fs.writeFileSync(opts.resources[1], 'data2');
+          setTimeout(function () {
+            fs.unlinkSync(opts.resources[0]);
+            fs.unlinkSync(opts.resources[1]);
+          }, 300);
+          waitOn(opts)
+            .then(function () {
+              done();
+            })
+            .catch(function (err) {
+              done(err);
+            });
+        });
+      });
+  
+      it('should timeout when file resources are available in reverse mode', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          var opts = {
+            resources: [
+              path.resolve(dirPath, 'foo'),
+              path.resolve(dirPath, 'bar')
+            ],
+            reverse: true,
+            timeout: 1000
+          };
+          fs.writeFileSync(opts.resources[0], 'data1');
+          fs.writeFileSync(opts.resources[1], 'data2');
+          waitOn(opts)
+            .then(function () {
+              done(new Error('Should not be resolved'));
+            })
+            .catch(function (err) {
+              expect(err).toExist();
+              done();
+            });
+        });
+      });
+
+    });
 
 });
