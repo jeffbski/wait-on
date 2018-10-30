@@ -58,6 +58,10 @@ Standard Options:
   Maximum time in ms to wait before exiting with failure (1) code,
   default Infinity
 
+  --tcpTimeout
+
+  Maximum time in ms for tcp connect, default 300ms
+
  -v, --verbose
 
   Enable debug output to stdout

@@ -380,6 +380,22 @@ describe('cli', function () {
       });
   });
 
+  it('should timeout when a service host is unreachable', function (done) {
+     var opts = {
+       resources: [
+        'tcp:256.0.0.1:1234'
+       ],
+       timeout: 1000,
+       tcpTimeout: 1000
+     };
+
+     execCLI(opts.resources.concat(FAST_OPTS), {})
+       .on('exit', function (code) {
+         expect(code).toNotBe(0);
+         done();
+       });
+  });
+
   it('should timeout when a service is not listening to a socket', function (done) {
     var socketPath;
     temp.mkdir({}, function (err, dirPath) {
@@ -490,6 +506,22 @@ describe('cli', function () {
           done();
         });
     });
+  });
+
+  it('should succeed when a service host is unreachable in reverse mode', function (done) {
+     var opts = {
+       resources: [
+        'tcp:256.0.0.1:1234'
+       ],
+       timeout: 1000,
+       tcpTimeout: 1000,
+     };
+     var OPTS = FAST_OPTS.concat(['-r']);
+     execCLI(opts.resources.concat(OPTS), {})
+       .on('exit', function (code) {
+         expect(code).toBe(0);
+         done();
+       });
   });
 
 });
