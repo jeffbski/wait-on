@@ -42,7 +42,7 @@ if (configFile) {
 opts.resources = argv._;
 
 // now check for specific options and set those
-opts = ['delay', 'interval', 'log', 'reverse', 'timeout', 'verbose', 'window']
+opts = ['delay', 'interval', 'log', 'reverse', 'timeout', 'tcpTimeout', 'verbose', 'window']
   .reduce(function (accum, x) {
     if (argv[x]) { accum[x] = argv[x]; }
     return accum;

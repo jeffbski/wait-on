@@ -388,6 +388,21 @@ describe('api', function () {
     });
   });
 
+  it('should timeout when a service host is unreachable', function (done) {
+    var opts = {
+      resources: [
+        'tcp:256.0.0.1:1234'
+      ],
+      timeout: 1000,
+      tcpTimeout: 1000
+    };
+
+    waitOn(opts, function (err) {
+      expect(err).toExist();
+      done();
+    });
+  });
+
   it('should timeout when an http service listening to a socket returns 404', function (done) {
     var socketPath;
     temp.mkdir({}, function (err, dirPath) {
@@ -448,6 +463,21 @@ describe('api', function () {
       });
     });
   });
+
+   it('should succeed when a service host is unreachable in reverse mode', function (done) {
+     var opts = {
+       resources: [
+         'tcp:256.0.0.1:1234'
+       ],
+       timeout: 1000,
+       tcpTimeout: 1000
+     };
+
+     waitOn(opts, function (err) {
+       expect().toNotExist();
+       done();
+     });
+   });
 
     it('should succeed when file resources are not available in reverse mode', function (done) {
       temp.mkdir({}, function (err, dirPath) {
@@ -535,12 +565,12 @@ describe('api', function () {
               path.resolve(dirPath, 'bar')
             ]
           };
-    
+
           setTimeout(function () {
             fs.writeFile(opts.resources[0], 'data1', function () {});
             fs.writeFile(opts.resources[1], 'data2', function () {});
           }, 300);
-    
+
           waitOn(opts)
             .then(function () {
               done();
@@ -567,7 +597,7 @@ describe('api', function () {
             });
         });
       });
-    
+
       it('should timeout when some resources are not available and timout option is specified', function (done) {
         temp.mkdir({}, function (err, dirPath) {
           var opts = {
@@ -607,7 +637,7 @@ describe('api', function () {
             });
         });
       });
-  
+
       it('should succeed when file resources are not available later in reverse mode', function (done) {
         temp.mkdir({}, function (err, dirPath) {
           var opts = {
@@ -632,7 +662,7 @@ describe('api', function () {
             });
         });
       });
-  
+
       it('should timeout when file resources are available in reverse mode', function (done) {
         temp.mkdir({}, function (err, dirPath) {
           var opts = {

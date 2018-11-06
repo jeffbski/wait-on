@@ -110,6 +110,10 @@ Standard Options:
   Maximum time in ms to wait before exiting with failure (1) code,
   default Infinity
 
+  --tcpTimeout
+
+   Maximum time in ms for tcp connect, default 300ms
+
  -v, --verbose
 
   Enable debug output to stdout
@@ -145,6 +149,7 @@ var opts = {
   delay: 1000, // initial delay in ms, default 0
   interval: 100, // poll interval in ms, default 250ms
   timeout: 30000, // timeout in ms, default Infinity
+  tcpTimeout: 1000, // tcp timeout in ms, default 300ms
   window: 1000, // stabilization time in ms, default 750ms
 
   // http options
@@ -200,6 +205,7 @@ waitOn(opts, [cb]) - function which triggers resource checks
  - opts.log - optional flag which outputs to stdout, remaining resources waited on and when complete or errored
  - opts.reverse - optional flag to reverse operation so checks are for resources being NOT available, default false
  - opts.timeout - optional timeout in ms, default Infinity. Aborts with error.
+ - opts.tcpTimeout - optional tcp timeout in ms, default 300ms
  - opts.verbose - optional flag which outputs debug output, default false
  - opts.window - optional stabilization time in ms, default 750ms. Waits this amount of time for file sizes to stabilize or other resource availability to remain unchanged.
  - http(s) specific options, see https://github.com/request/request#readme for specific details
