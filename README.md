@@ -12,7 +12,7 @@ wait-on can also be used in reverse mode which waits for resources to NOT be ava
 
 ## Installation
 
-Latest version 3 requires Node.js v6+
+Latest version 3 requires Node.js v8.9+
 
 (Node.js v4 users can still use wait-on@2.1.2, and older Node.js
 engines, use wait-on@1.5.4)
