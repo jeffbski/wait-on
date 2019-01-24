@@ -246,6 +246,7 @@ describe('cli', function () {
         resources: [ path.resolve(dirPath, 'foo') ],
         timeout: 1000
       };
+      // timeout is in FAST_OPTS
       execCLI(opts.resources.concat(FAST_OPTS), {})
         .on('exit', function (code) {
           expect(code).toNotBe(0);
@@ -264,6 +265,7 @@ describe('cli', function () {
         timeout: 1000
       };
       fs.writeFile(opts.resources[0], 'data', function () {});
+      // timeout is in FAST_OPTS
       execCLI(opts.resources.concat(FAST_OPTS), {})
         .on('exit', function (code) {
           expect(code).toNotBe(0);
@@ -290,6 +292,7 @@ describe('cli', function () {
         });
       httpServer.listen(3998, 'localhost');
     }, 300);
+    // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {})
       .on('exit', function (code) {
         expect(code).toNotBe(0);
@@ -307,6 +310,7 @@ describe('cli', function () {
       window: 100
     };
 
+    // timeout is in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {})
       .on('exit', function (code) {
         expect(code).toNotBe(0);
@@ -324,6 +328,7 @@ describe('cli', function () {
       window: 100
     };
 
+    // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {})
       .on('exit', function (code) {
         expect(code).toNotBe(0);
@@ -341,6 +346,7 @@ describe('cli', function () {
       window: 100
     };
 
+    // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {})
       .on('exit', function (code) {
         expect(code).toNotBe(0);
@@ -358,6 +364,7 @@ describe('cli', function () {
       window: 100
     };
 
+    // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {})
       .on('exit', function (code) {
         expect(code).toNotBe(0);
@@ -373,6 +380,7 @@ describe('cli', function () {
       timeout: 1000
     };
 
+    // timeout is in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {})
       .on('exit', function (code) {
         expect(code).toNotBe(0);
@@ -389,7 +397,9 @@ describe('cli', function () {
        tcpTimeout: 1000
      };
 
-     execCLI(opts.resources.concat(FAST_OPTS), {})
+     var addOpts = '--tcpTimeout 1000'.split(' ');
+     // timeout is in FAST_OPTS
+     execCLI(opts.resources.concat(FAST_OPTS).concat(addOpts), {})
        .on('exit', function (code) {
          expect(code).toNotBe(0);
          done();
@@ -409,6 +419,7 @@ describe('cli', function () {
         window: 100
       };
 
+      // timeout, interval, window are in FAST_OPTS
       execCLI(opts.resources.concat(FAST_OPTS), {})
         .on('exit', function (code) {
           expect(code).toNotBe(0);
@@ -440,6 +451,7 @@ describe('cli', function () {
         httpServer.listen(socketPath);
       }, 300);
 
+      // timeout, interval, window are in FAST_OPTS
       execCLI(opts.resources.concat(FAST_OPTS), {})
         .on('exit', function (code) {
           expect(code).toNotBe(0);
@@ -516,7 +528,8 @@ describe('cli', function () {
        timeout: 1000,
        tcpTimeout: 1000,
      };
-     var OPTS = FAST_OPTS.concat(['-r']);
+     // timeout is in FAST_OPTS
+     var OPTS = FAST_OPTS.concat(['-r', '--tcpTimeout', '1000']);
      execCLI(opts.resources.concat(OPTS), {})
        .on('exit', function (code) {
          expect(code).toBe(0);
