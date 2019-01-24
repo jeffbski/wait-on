@@ -306,6 +306,33 @@ describe('api', function () {
     });
   });
 
+  it('should timeout when an http resource does not respond before httpTimeout', function (done) {
+    var opts = {
+      resources: [
+        'http://localhost:8125'
+      ],
+      timeout: 1000,
+      interval: 100,
+      window: 100,
+      httpTimeout: 70
+    };
+
+    httpServer = http.createServer()
+      .on('request', function (req, res) {
+        // make it a slow response, longer than the httpTimeout
+        setTimeout(function () {
+          res.end('data');
+        }, 90);
+      });
+    httpServer.listen(8125, 'localhost');
+
+    waitOn(opts, function (err) {
+      expect(err).toExist();
+      done();
+    });
+  });
+
+
   it('should timeout when an http GET resource is not available', function (done) {
     var opts = {
       resources: [

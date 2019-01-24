@@ -93,7 +93,12 @@ Standard Options:
 
   Initial delay before checking for resources in ms, default 0
 
- -i, --interval
+ --httpTimeout
+
+  Maximum time in ms to wait for an HTTP HEAD/GET request, default 0
+  which results in using the OS default
+
+-i, --interval
 
   Interval to poll resources in ms, default 250ms
 

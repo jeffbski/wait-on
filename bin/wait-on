@@ -6,7 +6,7 @@ var path = require('path');
 var waitOn = require('../');
 
 var minimistOpts = {
-  string: ['c', 'd', 'i', 't', 'w'],
+  string: ['c', 'd', 'i', 't', 'w', 'httpTimeout', 'tcpTimeout'],
   boolean: ['h', 'l', 'r', 'v'],
   alias: {
     c: 'config',
@@ -42,7 +42,7 @@ if (configFile) {
 opts.resources = argv._;
 
 // now check for specific options and set those
-opts = ['delay', 'interval', 'log', 'reverse', 'timeout', 'tcpTimeout', 'verbose', 'window']
+opts = ['delay', 'httpTimeout', 'interval', 'log', 'reverse', 'timeout', 'tcpTimeout', 'verbose', 'window']
   .reduce(function (accum, x) {
     if (argv[x]) { accum[x] = argv[x]; }
     return accum;
