@@ -23,8 +23,8 @@ Description:
        file:      - regular file (also default type). ex: file:/path/to/file
        http:      - HTTP HEAD returns 2XX response. ex: http://m.com:90/foo
        https:     - HTTPS HEAD returns 2XX response. ex: https://my/bar
-       http-get:  - HTTP GET returns 2XX response. ex: http://m.com:90/foo
-       https-get: - HTTPS GET returns 2XX response. ex: https://my/bar
+       http-get:  - HTTP GET returns 2XX response. ex: http-get://m.com:90/foo
+       https-get: - HTTPS GET returns 2XX response. ex: https-get://my/bar
        tcp:       - TCP port is listening. ex: 1.2.3.4:9000 or foo.com:700
        socket:    - Domain Socket is listening. ex: socket:/path/to/sock
                     For http over socket, use http://unix:SOCK_PATH:URL_PATH
