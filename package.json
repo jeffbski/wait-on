@@ -1,5 +1,5 @@
 {
-  "name": "wait-on",
+  "name": "@goergemiguel/wait-on",
   "description": "wait-on is a cross platform command line utility and Node.js API which will wait for files, ports, sockets, and http(s) resources to become available",
   "version": "3.3.0",
   "main": "lib/wait-on",
