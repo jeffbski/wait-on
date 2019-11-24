@@ -23,11 +23,10 @@
   },
   "devDependencies": {
     "expect-legacy": "^1.20.2",
-    "mocha": "^6.1.4",
-    "temp": "^0.9.0"
+    "mocha": "^6.2.2",
+    "temp": "^0.9.1"
   },
   "dependencies": {
-    "core-js": "^2.6.5",
     "@hapi/joi": "^15.0.3",
     "minimist": "^1.2.0",
     "request": "^2.88.0",
