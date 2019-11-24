@@ -27,7 +27,7 @@
     "temp": "^0.9.1"
   },
   "dependencies": {
-    "@hapi/joi": "^15.0.3",
+    "@hapi/joi": "^16.1.8",
     "minimist": "^1.2.0",
     "request": "^2.88.0",
     "rx": "^4.1.0"
