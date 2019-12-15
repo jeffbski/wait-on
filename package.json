@@ -27,8 +27,8 @@
     "temp": "^0.9.0"
   },
   "dependencies": {
-    "core-js": "^2.6.5",
     "@hapi/joi": "^15.0.3",
+    "core-js": "^3.5.0",
     "minimist": "^1.2.0",
     "request": "^2.88.0",
     "rx": "^4.1.0"
