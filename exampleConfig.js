@@ -18,5 +18,8 @@ module.exports = {
   followRedirect: false,
   headers: {
     'x-custom': 'headers'
-  }
+  },
+
+  //set this to 'true' to accept all GET and HEAD response codes as a success (not only 2XX)
+  allowAnyResponse: false
 };

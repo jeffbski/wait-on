@@ -233,6 +233,33 @@ describe('api', function () {
     });
   });
 
+  it('should succeed when an http resource returns 404 and allowAnyResponse is set', function (done) {
+    var opts = {
+      resources: [
+        'http://localhost:3002'
+      ],
+      timeout: 1000,
+      interval: 100,
+      window: 100,
+      allowAnyResponse: true
+    };
+
+    setTimeout(function () {
+      httpServer = http.createServer()
+        .on('request', function (req, res) {
+          res.statusCode = 404;
+          res.end('data');
+        });
+      httpServer.listen(3002, 'localhost');
+    }, 300);
+
+    waitOn(opts, function (err) {
+      expect(err).toNotExist();
+      done();
+    });
+  });
+
+
   // Error situations
 
   it('should timeout when all resources are not available and timout option is specified', function (done) {
@@ -265,7 +292,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http resource returns 404', function (done) {
+  it('should timeout when an http resource returns 404 and allowAnyResponse is not set', function (done) {
     var opts = {
       resources: [
         'http://localhost:3002'
@@ -298,6 +325,23 @@ describe('api', function () {
       timeout: 1000,
       interval: 100,
       window: 100
+    };
+
+    waitOn(opts, function (err) {
+      expect(err).toExist();
+      done();
+    });
+  });
+
+  it('should timeout when an http resource is not available even if allowAnyResponse is set', function (done) {
+    var opts = {
+      resources: [
+        'http://localhost:3010'
+      ],
+      timeout: 1000,
+      interval: 100,
+      window: 100,
+      allowAnyResponse: true
     };
 
     waitOn(opts, function (err) {
