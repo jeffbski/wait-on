@@ -442,13 +442,16 @@ describe('api', function() {
   it('should succeed when a service host is unreachable in reverse mode', function(done) {
     var opts = {
       resources: ['tcp:256.0.0.1:1234'],
+      interval: 100,
       timeout: 1000,
-      tcpTimeout: 1000
+      tcpTimeout: 1000,
+      reverse: true,
+      window: 100
     };
 
     waitOn(opts, function(err) {
       if (err) return done(err);
-      expect().toNotExist();
+      expect(err).toNotExist();
       done();
     });
   });
