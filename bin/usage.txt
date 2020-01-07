@@ -25,7 +25,7 @@ Description:
        https:     - HTTPS HEAD returns 2XX response. ex: https://my/bar
        http-get:  - HTTP GET returns 2XX response. ex: http-get://m.com:90/foo
        https-get: - HTTPS GET returns 2XX response. ex: https-get://my/bar
-       tcp:       - TCP port is listening. ex: 1.2.3.4:9000 or foo.com:700
+       tcp:       - TCP port is listening. ex: tcp:1.2.3.4:9000 or tcp:foo.com:700
        socket:    - Domain Socket is listening. ex: socket:/path/to/sock
                     For http over socket, use http://unix:SOCK_PATH:URL_PATH
                     like http://unix:/path/to/sock:/foo/bar or
@@ -58,6 +58,12 @@ Standard Options:
 
   Reverse operation, wait for resources to NOT be available
 
+ -s, --simultaneous
+
+  Simultaneous / Concurrent connections to a resource, default Infinity
+  Setting this to 1 would delay new requests until previous one has completed.
+  Used to limit the number of connections attempted to a resource at a time.
+
  -t, --timeout
 
   Maximum time in ms to wait before exiting with failure (1) code,
@@ -74,9 +80,10 @@ Standard Options:
  -w, --window
 
   Stability window, the time in ms defining the window of time that
-  resource needs to have not changed (file size or availability) before
-  signalling success, default 750ms. If less than interval, it will be
-  reset to the value of interval.
+  resource needs to have not changed (file size/availability) before
+  signaling success, default 750ms. If less than interval, it will be
+  reset to the value of interval. This is only used for files, other
+  resources are considered available on first detection.
 
  -h, --help
 

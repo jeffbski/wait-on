@@ -17,7 +17,6 @@ Latest version 3 requires Node.js v8.9+
 (Node.js v4 users can still use wait-on@2.1.2, and older Node.js
 engines, use wait-on@1.5.4)
 
-
 ```bash
 npm install wait-on # local version
 OR
@@ -110,6 +109,12 @@ Standard Options:
 
   Reverse operation, wait for resources to NOT be available
 
+ -s, --simultaneous
+
+  Simultaneous / Concurrent connections to a resource, default Infinity
+  Setting this to 1 would delay new requests until previous one has completed.
+  Used to limit the number of connections attempted to a resource at a time.
+
  -t, --timeout
 
   Maximum time in ms to wait before exiting with failure (1) code,
@@ -128,7 +133,8 @@ Standard Options:
   Stability window, the time in ms defining the window of time that
   resource needs to have not changed (file size or availability) before
   signalling success, default 750ms. If less than interval, it will be
-  reset to the value of interval.
+  reset to the value of interval. This is only used for files, other
+  resources are considered available on first detection.
 
  -h, --help
 
@@ -158,9 +164,15 @@ var opts = {
   window: 1000, // stabilization time in ms, default 750ms
 
   // http options
-  ca: [ /* strings or binaries */ ],
-  cert: [ /* strings or binaries */ ],
-  key: [ /* strings or binaries */ ],
+  ca: [
+    /* strings or binaries */
+  ],
+  cert: [
+    /* strings or binaries */
+  ],
+  key: [
+    /* strings or binaries */
+  ],
   passphrase: 'yourpassphrase',
   auth: {
     user: 'theuser', // or username
@@ -179,17 +191,19 @@ var opts = {
 };
 
 // Usage with callback function
-waitOn(opts, function (err) {
-  if (err) { return handleError(err); }
+waitOn(opts, function(err) {
+  if (err) {
+    return handleError(err);
+  }
   // once here, all resources are available
 });
 
 // Usage with promises
 waitOn(opts)
-  .then(function () {
+  .then(function() {
     // once here, all resources are available
   })
-  .catch(function (err) {
+  .catch(function(err) {
     handleError(err);
   });
 
@@ -204,42 +218,42 @@ try {
 
 waitOn(opts, [cb]) - function which triggers resource checks
 
- - opts.resources - array of string resources to wait for. prefix determines the type of resource with the default type of `file:`
- - opts.delay - optional initial delay in ms, default 0
- - opts.interval - optional poll resource interval in ms, default 250ms
- - opts.log - optional flag which outputs to stdout, remaining resources waited on and when complete or errored
- - opts.reverse - optional flag to reverse operation so checks are for resources being NOT available, default false
- - opts.timeout - optional timeout in ms, default Infinity. Aborts with error.
- - opts.tcpTimeout - optional tcp timeout in ms, default 300ms
- - opts.verbose - optional flag which outputs debug output, default false
- - opts.window - optional stabilization time in ms, default 750ms. Waits this amount of time for file sizes to stabilize or other resource availability to remain unchanged.
- - http(s) specific options, see https://github.com/request/request#readme for specific details
-   - opts.ca: [ /* strings or binaries */ ],
-   - opts.cert: [ /* strings or binaries */ ],
-   - opts.key: [ /* strings or binaries */ ],
-   - opts.passphrase: 'yourpassphrase',
-   - opts.auth: { user, pass }
-   - opts.httpSignature: { keyId, key }
-   - opts.strictSSL: false,
-   - opts.followAllRedirects: true,
-   - opts.followRedirect: true,
-   - opts.headers: { 'x-custom': 'headers' },
+- opts.resources - array of string resources to wait for. prefix determines the type of resource with the default type of `file:`
+- opts.delay - optional initial delay in ms, default 0
+- opts.interval - optional poll resource interval in ms, default 250ms
+- opts.log - optional flag which outputs to stdout, remaining resources waited on and when complete or errored
+- opts.reverse - optional flag to reverse operation so checks are for resources being NOT available, default false
+- opts.timeout - optional timeout in ms, default Infinity. Aborts with error.
+- opts.tcpTimeout - optional tcp timeout in ms, default 300ms
+- opts.verbose - optional flag which outputs debug output, default false
+- opts.window - optional stabilization time in ms, default 750ms. Waits this amount of time for file sizes to stabilize or other resource availability to remain unchanged.
+- http(s) specific options, see https://github.com/request/request#readme for specific details
 
- - cb(err) - if err is provided then, resource checks did not succeed
+  - opts.ca: [ /* strings or binaries */ ],
+  - opts.cert: [ /* strings or binaries */ ],
+  - opts.key: [ /* strings or binaries */ ],
+  - opts.passphrase: 'yourpassphrase',
+  - opts.auth: { user, pass }
+  - opts.httpSignature: { keyId, key }
+  - opts.strictSSL: false,
+  - opts.followAllRedirects: true,
+  - opts.followRedirect: true,
+  - opts.headers: { 'x-custom': 'headers' },
 
+- cb(err) - if err is provided then, resource checks did not succeed
 
 ## Goals
 
- - simple command line utility and Node.js API for waiting for resources
- - wait for files to stabilize
- - wait for http(s) resources to return 2XX in response to HEAD request
- - wait for http(s) resources to return 2XX in response to GET request
- - wait for services to be listening on tcp ports
- - wait for services to be listening on unix domain sockets
- - configurable initial delay, poll interval, stabilization window, timeout
- - command line utility returns success code (0) when resources are availble
- - command line utility that can also wait for resources to not be available using reverse flag. This is useful for waiting for services to shutdown before continuing.
- - cross platform - runs anywhere Node.js runs (linux, unix, mac OS X, windows)
+- simple command line utility and Node.js API for waiting for resources
+- wait for files to stabilize
+- wait for http(s) resources to return 2XX in response to HEAD request
+- wait for http(s) resources to return 2XX in response to GET request
+- wait for services to be listening on tcp ports
+- wait for services to be listening on unix domain sockets
+- configurable initial delay, poll interval, stabilization window, timeout
+- command line utility returns success code (0) when resources are availble
+- command line utility that can also wait for resources to not be available using reverse flag. This is useful for waiting for services to shutdown before continuing.
+- cross platform - runs anywhere Node.js runs (linux, unix, mac OS X, windows)
 
 ## Why
 
@@ -249,10 +263,10 @@ I frequently need to wait on build tasks to complete or services to be available
 
 If you have input or ideas or would like to get involved, you may:
 
- - contact me via twitter @jeffbski  - <http://twitter.com/jeffbski>
- - open an issue on github to begin a discussion - <https://github.com/jeffbski/wait-on/issues>
- - fork the repo and send a pull request (ideally with tests) - <https://github.com/jeffbski/wait-on>
+- contact me via twitter @jeffbski - <http://twitter.com/jeffbski>
+- open an issue on github to begin a discussion - <https://github.com/jeffbski/wait-on/issues>
+- fork the repo and send a pull request (ideally with tests) - <https://github.com/jeffbski/wait-on>
 
 ## License
 
- - [MIT license](http://github.com/jeffbski/wait-on/raw/master/LICENSE)
+- [MIT license](http://github.com/jeffbski/wait-on/raw/master/LICENSE)
