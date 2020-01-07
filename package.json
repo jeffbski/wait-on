@@ -38,9 +38,11 @@
   },
   "dependencies": {
     "@hapi/joi": "^16.1.8",
+    "lodash": "^4.17.15",
     "minimist": "^1.2.0",
     "request": "^2.88.0",
-    "rx": "^4.1.0"
+    "request-promise-native": "^1.0.8",
+    "rxjs": "^6.5.4"
   },
   "keywords": [
     "wait",
