@@ -1,16 +1,17 @@
 'use strict';
 
-var waitOn = require('../');
-var fs = require('fs');
-var http = require('http');
-var path = require('path');
-var temp = require('temp');
+const waitOn = require('../');
+const fs = require('fs');
+const http = require('http');
+const path = require('path');
+const temp = require('temp');
+const mkdirp = require('mkdirp');
 
-var mocha = require('mocha');
-var describe = mocha.describe;
-var it = mocha.it;
-var afterEach = mocha.afterEach;
-var expect = require('expect-legacy');
+const mocha = require('mocha');
+const describe = mocha.describe;
+const it = mocha.it;
+const afterEach = mocha.afterEach;
+const expect = require('expect-legacy');
 
 temp.track(); // cleanup files on exit
 
@@ -30,9 +31,10 @@ describe('api', function() {
     temp.mkdir({}, function(err, dirPath) {
       if (err) return done(err);
       var opts = {
-        resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')]
+        resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')]
       };
       fs.writeFileSync(opts.resources[0], 'data1');
+      mkdirp.sync(path.dirname(opts.resources[1]));
       fs.writeFileSync(opts.resources[1], 'data2');
       waitOn(opts, function(err) {
         expect(err).toNotExist();
@@ -45,11 +47,12 @@ describe('api', function() {
     temp.mkdir({}, function(err, dirPath) {
       if (err) return done(err);
       var opts = {
-        resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')]
+        resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')]
       };
 
       setTimeout(function() {
         fs.writeFile(opts.resources[0], 'data1', function() {});
+        mkdirp.sync(path.dirname(opts.resources[1]));
         fs.writeFile(opts.resources[1], 'data2', function() {});
       }, 300);
 
