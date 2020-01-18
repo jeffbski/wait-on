@@ -17,6 +17,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint \"lib/**/*.js\" \"test/**/*.js\" \"bin/wait-on\"",
+    "publish:next": "npm publish --tag next && npm view",
     "test": "mocha --exit 'test/**/*.mocha.js'"
   },
   "engines": {
