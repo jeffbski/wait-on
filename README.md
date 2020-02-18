@@ -29,11 +29,11 @@ Use from command line or using Node.js programmatic API.
 
 ### CLI Usage
 
-Assuming NEXT_CMD is the command to run when resources are available, then wait-on will wait and then exit with successfull exit code (0) once all resrouces are available causing NEXT_CMD to be run.
+Assuming NEXT_CMD is the command to run when resources are available, then wait-on will wait and then exit with a successful exit code (0) once all resources are available, causing NEXT_CMD to be run.
 
-wait-on can also be used in reverse mode which waits for resources to NOT be available. This is useful in waiting for services to shutdown before continuing. (Thanks @skarbovskiy for adding)
+wait-on can also be used in reverse mode, which waits for resources to NOT be available. This is useful in waiting for services to shutdown before continuing. (Thanks @skarbovskiy for adding)
 
-If wait-on is interrupted before all resources are available, it will exit with non-zero exit code and thus NEXT_CMD will not be run.
+If wait-on is interrupted before all resources are available, it will exit with a non-zero exit code and thus NEXT_CMD will not be run.
 
 ```bash
 wait-on file1 && NEXT_CMD # wait for file1, then exec NEXT_CMD
