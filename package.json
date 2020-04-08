@@ -24,26 +24,26 @@
     "node": ">=8.9.0"
   },
   "devDependencies": {
-    "eslint": "^6.5.1",
-    "eslint-config-prettier": "^6.7.0",
-    "eslint-config-standard": "^14.1.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.1",
+    "eslint-config-standard": "^14.1.1",
     "eslint-plugin-chai-friendly": "^0.5.0",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-import": "^2.20.2",
+    "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "expect-legacy": "^1.20.2",
-    "mkdirp": "^0.5.1",
-    "mocha": "^6.2.2",
+    "mkdirp": "^1.0.4",
+    "mocha": "^7.1.1",
     "temp": "^0.9.1"
   },
   "dependencies": {
-    "@hapi/joi": "^17.1.0",
+    "@hapi/joi": "^17.1.1",
     "lodash": "^4.17.15",
     "minimist": "^1.2.5",
-    "request": "^2.88.0",
+    "request": "^2.88.2",
     "request-promise-native": "^1.0.8",
-    "rxjs": "^6.5.4"
+    "rxjs": "^6.5.5"
   },
   "keywords": [
     "wait",
