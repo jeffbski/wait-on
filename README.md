@@ -155,7 +155,7 @@ var opts = {
     'tcp:foo.com:8000',
     'socket:/my/sock',
     'http://unix:/my/sock:/my/url',
-    'http-get://unix:/my/sock:/my/url'
+    'http-get://unix:/my/sock:/my/url',
   ],
   delay: 1000, // initial delay in ms, default 0
   interval: 100, // poll interval in ms, default 250ms
@@ -176,22 +176,17 @@ var opts = {
   passphrase: 'yourpassphrase',
   auth: {
     user: 'theuser', // or username
-    pass: 'thepassword' // or password
-  },
-  httpSignature: {
-    keyId: 'yourKeyId',
-    key: 'yourKey'
+    pass: 'thepassword', // or password
   },
   strictSSL: false,
-  followAllRedirects: true,
   followRedirect: true,
   headers: {
-    'x-custom': 'headers'
-  }
+    'x-custom': 'headers',
+  },
 };
 
 // Usage with callback function
-waitOn(opts, function(err) {
+waitOn(opts, function (err) {
   if (err) {
     return handleError(err);
   }
@@ -200,10 +195,10 @@ waitOn(opts, function(err) {
 
 // Usage with promises
 waitOn(opts)
-  .then(function() {
+  .then(function () {
     // once here, all resources are available
   })
-  .catch(function(err) {
+  .catch(function (err) {
     handleError(err);
   });
 
@@ -227,17 +222,15 @@ waitOn(opts, [cb]) - function which triggers resource checks
 - opts.tcpTimeout - optional tcp timeout in ms, default 300ms
 - opts.verbose - optional flag which outputs debug output, default false
 - opts.window - optional stabilization time in ms, default 750ms. Waits this amount of time for file sizes to stabilize or other resource availability to remain unchanged.
-- http(s) specific options, see https://github.com/request/request#readme for specific details
+- http(s) specific options, see https://nodejs.org/api/tls.html#tls_tls_connect_options_callback for specific details
 
   - opts.ca: [ /* strings or binaries */ ],
   - opts.cert: [ /* strings or binaries */ ],
   - opts.key: [ /* strings or binaries */ ],
   - opts.passphrase: 'yourpassphrase',
   - opts.auth: { user, pass }
-  - opts.httpSignature: { keyId, key }
   - opts.strictSSL: false,
-  - opts.followAllRedirects: true,
-  - opts.followRedirect: true,
+  - opts.followRedirect: false, // defaults to true
   - opts.headers: { 'x-custom': 'headers' },
 
 - cb(err) - if err is provided then, resource checks did not succeed

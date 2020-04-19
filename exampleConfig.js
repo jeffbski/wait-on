@@ -1,22 +1,23 @@
 module.exports = {
   // specify additional options here, especially http(s)
-  // see https://github.com/request/request#readme for specifics
-  ca: [ /* strings or binaries */],
-  cert: [ /* strings or binaries */],
-  key: [ /* strings or binaries */],
+  // see https://nodejs.org/api/tls.html#tls_tls_connect_options_callback for specifics
+  ca: [
+    /* strings or binaries */
+  ],
+  cert: [
+    /* strings or binaries */
+  ],
+  key: [
+    /* strings or binaries */
+  ],
   passphrase: 'yourpassphrase',
   auth: {
     user: 'yourusername',
-    pass: 'yourpassword'
-  },
-  httpSignature: {
-    keyId: 'keyId',
-    key: 'yourkey'
+    pass: 'yourpassword',
   },
   strictSSL: false,
-  followAllRedirects: false,
   followRedirect: false,
   headers: {
-    'x-custom': 'headers'
-  }
+    'x-custom': 'headers',
+  },
 };
