@@ -183,6 +183,9 @@ var opts = {
   headers: {
     'x-custom': 'headers',
   },
+  validateStatus: function (status) {
+    return status >= 200 && status < 300; // default if not provided
+  },
 };
 
 // Usage with callback function

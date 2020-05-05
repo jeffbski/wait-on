@@ -81,6 +81,28 @@ describe('api', function () {
     });
   });
 
+  it('should succeed when custom validateStatus fn is provided http resource returns 401', function (done) {
+    var opts = {
+      resources: ['http://localhost:3000'],
+      validateStatus: function (status) {
+        return status === 401 || (status >= 200 && status < 300);
+      },
+    };
+
+    setTimeout(function () {
+      httpServer = http.createServer().on('request', function (req, res) {
+        res.statusCode = 401;
+        res.end('Not authorized');
+      });
+      httpServer.listen(3000, 'localhost');
+    }, 300);
+
+    waitOn(opts, function (err) {
+      expect(err).toNotExist();
+      done();
+    });
+  });
+
   it('should succeed when http resource become available later via redirect', function (done) {
     var opts = {
       // followRedirect: true // default is true
