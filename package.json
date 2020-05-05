@@ -18,7 +18,9 @@
   "scripts": {
     "lint": "eslint \"lib/**/*.js\" \"test/**/*.js\" \"bin/wait-on\"",
     "publish:next": "npm publish --tag next && npm view",
-    "test": "mocha --exit 'test/**/*.mocha.js'"
+    "test": "mocha --exit 'test/**/*.mocha.js'",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "engines": {
     "node": ">=8.9.0"
@@ -42,7 +44,8 @@
     "axios": "^0.19.2",
     "lodash": "^4.17.15",
     "minimist": "^1.2.5",
-    "rxjs": "^6.5.5"
+    "rxjs": "^6.5.5",
+    "snyk": "^1.317.0"
   },
   "keywords": [
     "wait",
@@ -63,5 +66,6 @@
     "windows",
     "win32",
     "osx"
-  ]
+  ],
+  "snyk": true
 }
