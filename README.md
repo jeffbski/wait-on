@@ -174,6 +174,17 @@ var opts = {
     /* strings or binaries */
   ],
   passphrase: 'yourpassphrase',
+  proxy: false /* OR proxy config as defined in axios.
+  If not set axios detects proxy from env vars http_proxy and https_proxy
+  https://github.com/axios/axios#config-defaults
+  {
+    host: '127.0.0.1',
+    port: 9000,
+    auth: {
+      username: 'mikeymike',
+      password: 'rapunz3l'
+    }
+  } */,
   auth: {
     user: 'theuser', // or username
     pass: 'thepassword', // or password
