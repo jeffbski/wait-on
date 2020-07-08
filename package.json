@@ -40,7 +40,7 @@
   "dependencies": {
     "@hapi/joi": "^17.1.1",
     "axios": "^0.19.2",
-    "lodash": "^4.17.18",
+    "lodash": "^4.17.19",
     "minimist": "^1.2.5",
     "rxjs": "^6.5.5"
   },
