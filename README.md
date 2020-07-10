@@ -244,10 +244,24 @@ waitOn(opts, [cb]) - function which triggers resource checks
   - opts.cert: [ /* strings or binaries */ ],
   - opts.key: [ /* strings or binaries */ ],
   - opts.passphrase: 'yourpassphrase',
-  - opts.auth: { user, pass }
-  - opts.strictSSL: false,
-  - opts.followRedirect: false, // defaults to true
-  - opts.headers: { 'x-custom': 'headers' },
+  - opts.proxy: undefined, false, or object as defined in axios. Default is undefined. If not set axios detects proxy from env vars http_proxy and https_proxy. https://github.com/axios/axios#config-defaults
+
+```js
+  // example proxy object
+  {
+    host: '127.0.0.1',
+    port: 9000,
+    auth: {
+      username: 'mikeymike',
+      password: 'rapunz3l'
+    }
+  }
+```
+
+- opts.auth: { user, pass }
+- opts.strictSSL: false,
+- opts.followRedirect: false, // defaults to true
+- opts.headers: { 'x-custom': 'headers' },
 
 - cb(err) - if err is provided then, resource checks did not succeed
 
