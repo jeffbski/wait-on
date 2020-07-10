@@ -159,10 +159,10 @@ var opts = {
   ],
   delay: 1000, // initial delay in ms, default 0
   interval: 100, // poll interval in ms, default 250ms
+  simultaneous: 1, // limit to 1 connection per resource at a time
   timeout: 30000, // timeout in ms, default Infinity
   tcpTimeout: 1000, // tcp timeout in ms, default 300ms
   window: 1000, // stabilization time in ms, default 750ms
-  simultaneous: 1, // limit to 1 connection per resource at a time
 
   // http options
   ca: [
@@ -222,6 +222,7 @@ waitOn(opts, [cb]) - function which triggers resource checks
 - opts.interval - optional poll resource interval in ms, default 250ms
 - opts.log - optional flag which outputs to stdout, remaining resources waited on and when complete or errored
 - opts.reverse - optional flag to reverse operation so checks are for resources being NOT available, default false
+- opts.simultaneous - optional count to limit concurrent connections per resource at a time, setting to 1 waits for previous connection to succeed, fail, or timeout before sending another, default infinity
 - opts.timeout - optional timeout in ms, default Infinity. Aborts with error.
 - opts.tcpTimeout - optional tcp timeout in ms, default 300ms
 - opts.verbose - optional flag which outputs debug output, default false
