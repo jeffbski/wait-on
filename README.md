@@ -162,6 +162,7 @@ var opts = {
   timeout: 30000, // timeout in ms, default Infinity
   tcpTimeout: 1000, // tcp timeout in ms, default 300ms
   window: 1000, // stabilization time in ms, default 750ms
+  simultaneous: 1, // limit to 1 connection per resource at a time
 
   // http options
   ca: [
