@@ -38,8 +38,8 @@
     "temp": "^0.9.1"
   },
   "dependencies": {
-    "@hapi/joi": "^17.1.1",
     "axios": "^0.19.2",
+    "joi": "^17.1.1",
     "lodash": "^4.17.19",
     "minimist": "^1.2.5",
     "rxjs": "^6.5.5"
