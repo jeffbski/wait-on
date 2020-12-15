@@ -40,8 +40,10 @@ if (argv.help || !argv._.length) {
     opts = require(path.resolve(configFile));
   }
 
-  // add in the resources listed on the command line
-  opts.resources = argv._;
+  // add in the resources listed on the command line (if not present in config)
+  if (!opts.resources) { 
+    opts.resources = argv._;
+  }
 
   // now check for specific options and set those
   opts = [
