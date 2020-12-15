@@ -24,7 +24,7 @@ var minimistOpts = {
 
 var argv = minimist(process.argv.slice(2), minimistOpts);
 
-if (argv.help || !argv._.length) {
+if (argv.help) {
   // help
   fs.createReadStream(path.join(__dirname, '/usage.txt'))
     .pipe(process.stdout)
