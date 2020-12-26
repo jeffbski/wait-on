@@ -17,7 +17,7 @@ temp.track(); // cleanup files on exit
 
 describe('api', function () {
   this.timeout(3000);
-  var httpServer = null;
+  let httpServer = null;
 
   afterEach(function (done) {
     if (httpServer) {
@@ -30,7 +30,7 @@ describe('api', function () {
   it('should succeed when file resources are available', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')],
       };
       fs.writeFileSync(opts.resources[0], 'data1');
@@ -46,7 +46,7 @@ describe('api', function () {
   it('should succeed when file resources are become available later', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')],
       };
 
@@ -64,7 +64,7 @@ describe('api', function () {
   });
 
   it('should succeed when http resources are become available later', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:3000', 'http://localhost:3000/foo'],
     };
 
@@ -82,7 +82,7 @@ describe('api', function () {
   });
 
   it('should succeed when custom validateStatus fn is provided http resource returns 401', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:3000'],
       validateStatus: function (status) {
         return status === 401 || (status >= 200 && status < 300);
@@ -104,7 +104,7 @@ describe('api', function () {
   });
 
   it('should succeed when http resource become available later via redirect', function (done) {
-    var opts = {
+    const opts = {
       // followRedirect: true // default is true
       resources: ['http://localhost:3000'],
     };
@@ -127,7 +127,7 @@ describe('api', function () {
   });
 
   it('should succeed when http GET resources become available later', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http-get://localhost:3011', 'http-get://localhost:3011/foo'],
     };
 
@@ -145,7 +145,7 @@ describe('api', function () {
   });
 
   it('should succeed when http GET resource become available later via redirect', function (done) {
-    var opts = {
+    const opts = {
       // followRedirect: true, // default is true
       resources: ['http-get://localhost:3000'],
     };
@@ -169,7 +169,7 @@ describe('api', function () {
 
   /*
   it('should succeed when an https resource is available', function (done) {
-    var opts = {
+    const opts = {
       resources: [
         'https://www.google.com'
       ]
@@ -182,7 +182,7 @@ describe('api', function () {
   });
 
   it('should succeed when an https GET resource is available', function (done) {
-    var opts = {
+    const opts = {
       resources: [
         'https-get://www.google.com'
       ]
@@ -196,7 +196,7 @@ describe('api', function () {
   */
 
   it('should succeed when a service is listening to tcp port', function (done) {
-    var opts = {
+    const opts = {
       resources: ['tcp:localhost:3001', 'tcp:3001'],
     };
 
@@ -214,11 +214,11 @@ describe('api', function () {
   });
 
   it('should succeed when a service is listening to a socket', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['socket:' + socketPath],
       };
 
@@ -235,11 +235,11 @@ describe('api', function () {
   });
 
   it('should succeed when a http service is listening to a socket', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
       };
 
@@ -258,11 +258,11 @@ describe('api', function () {
   });
 
   it('should succeed when a http GET service is listening to a socket', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['http-get://unix:' + socketPath + ':/', 'http-get://unix:' + socketPath + ':/foo'],
       };
 
@@ -285,7 +285,7 @@ describe('api', function () {
   it('should timeout when all resources are not available and timout option is specified', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo')],
         timeout: 1000,
       };
@@ -299,7 +299,7 @@ describe('api', function () {
   it('should timeout when some resources are not available and timout option is specified', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
         timeout: 1000,
       };
@@ -312,7 +312,7 @@ describe('api', function () {
   });
 
   it('should timeout when an http resource returns 404', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:3002'],
       timeout: 1000,
       interval: 100,
@@ -334,7 +334,7 @@ describe('api', function () {
   });
 
   it('should timeout when an http resource is not available', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:3010'],
       timeout: 1000,
       interval: 100,
@@ -348,7 +348,7 @@ describe('api', function () {
   });
 
   it('should timeout when an http resource does not respond before httpTimeout', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:8125'],
       timeout: 1000,
       interval: 100,
@@ -371,7 +371,7 @@ describe('api', function () {
   });
 
   it('should timeout when followRedirect is false and http resource redirects', function (done) {
-    var opts = {
+    const opts = {
       timeout: 1000,
       interval: 100,
       window: 100,
@@ -395,7 +395,7 @@ describe('api', function () {
   });
 
   it('should timeout when an http GET resource is not available', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http-get://localhost:3010'],
       timeout: 1000,
       interval: 100,
@@ -409,7 +409,7 @@ describe('api', function () {
   });
 
   it('should timeout when an https resource is not available', function (done) {
-    var opts = {
+    const opts = {
       resources: ['https://localhost:3010/foo/bar'],
       timeout: 1000,
       interval: 100,
@@ -423,7 +423,7 @@ describe('api', function () {
   });
 
   it('should timeout when an https GET resource is not available', function (done) {
-    var opts = {
+    const opts = {
       resources: ['https-get://localhost:3010/foo/bar'],
       timeout: 1000,
       interval: 100,
@@ -437,7 +437,7 @@ describe('api', function () {
   });
 
   it('should timeout when followRedirect is false and http GET resource redirects', function (done) {
-    var opts = {
+    const opts = {
       timeout: 1000,
       interval: 100,
       window: 100,
@@ -461,7 +461,7 @@ describe('api', function () {
   });
 
   it('should timeout when a service is not listening to tcp port', function (done) {
-    var opts = {
+    const opts = {
       resources: ['tcp:localhost:3010'],
       timeout: 1000,
     };
@@ -473,11 +473,11 @@ describe('api', function () {
   });
 
   it('should timeout when a service is not listening to a socket', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['socket:' + socketPath],
         timeout: 1000,
         interval: 100,
@@ -492,7 +492,7 @@ describe('api', function () {
   });
 
   it('should timeout when a service host is unreachable', function (done) {
-    var opts = {
+    const opts = {
       resources: ['tcp:256.0.0.1:1234'],
       timeout: 1000,
       tcpTimeout: 1000,
@@ -505,11 +505,11 @@ describe('api', function () {
   });
 
   it('should timeout when an http service listening to a socket returns 404', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
         timeout: 1000,
         interval: 100,
@@ -532,11 +532,11 @@ describe('api', function () {
   });
 
   it('should timeout when an http service listening to a socket is too slow', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['package.json', 'http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
         timeout: 1000,
         interval: 100,
@@ -559,7 +559,7 @@ describe('api', function () {
   });
 
   it('should succeed when a service host is unreachable in reverse mode', function (done) {
-    var opts = {
+    const opts = {
       resources: ['tcp:256.0.0.1:1234'],
       interval: 100,
       timeout: 1000,
@@ -578,7 +578,7 @@ describe('api', function () {
   it('should succeed when file resources are not available in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
         reverse: true,
       };
@@ -592,7 +592,7 @@ describe('api', function () {
   it('should succeed when file resources are not available later in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
         reverse: true,
       };
@@ -612,7 +612,7 @@ describe('api', function () {
   it('should timeout when file resources are available in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
         reverse: true,
         timeout: 1000,
@@ -630,7 +630,7 @@ describe('api', function () {
     it('should succeed when file resources are available', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
-        var opts = {
+        const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
         };
         fs.writeFileSync(opts.resources[0], 'data1');
@@ -648,7 +648,7 @@ describe('api', function () {
     it('should succeed when file resources are become available later', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
-        var opts = {
+        const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
         };
 
@@ -670,7 +670,7 @@ describe('api', function () {
     it('should timeout when all resources are not available and timout option is specified', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
-        var opts = {
+        const opts = {
           resources: [path.resolve(dirPath, 'foo')],
           timeout: 1000,
         };
@@ -688,7 +688,7 @@ describe('api', function () {
     it('should timeout when some resources are not available and timout option is specified', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
-        var opts = {
+        const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
           timeout: 1000,
         };
@@ -707,7 +707,7 @@ describe('api', function () {
     it('should succeed when file resources are not available in reverse mode', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
-        var opts = {
+        const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
           reverse: true,
         };
@@ -724,7 +724,7 @@ describe('api', function () {
     it('should succeed when file resources are not available later in reverse mode', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
-        var opts = {
+        const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
           reverse: true,
         };
@@ -747,7 +747,7 @@ describe('api', function () {
     it('should timeout when file resources are available in reverse mode', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
-        var opts = {
+        const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
           reverse: true,
           timeout: 1000,

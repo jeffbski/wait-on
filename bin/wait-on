@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-var fs = require('fs');
-var minimist = require('minimist');
-var path = require('path');
-var waitOn = require('../');
+const fs = require('fs');
+const minimist = require('minimist');
+const path = require('path');
+const waitOn = require('../');
 
-var minimistOpts = {
+const minimistOpts = {
   string: ['c', 'd', 'i', 's', 't', 'w', 'httpTimeout', 'tcpTimeout'],
   boolean: ['h', 'l', 'r', 'v'],
   alias: {
@@ -18,24 +18,24 @@ var minimistOpts = {
     t: 'timeout',
     v: 'verbose',
     w: 'window',
-    h: 'help'
-  }
+    h: 'help',
+  },
 };
 
-var argv = minimist(process.argv.slice(2), minimistOpts);
+const argv = minimist(process.argv.slice(2), minimistOpts);
 
 if (argv.help || !argv._.length) {
   // help
   fs.createReadStream(path.join(__dirname, '/usage.txt'))
     .pipe(process.stdout)
-    .on('close', function() {
+    .on('close', function () {
       process.exit(1);
     });
 } else {
-  var opts = {};
+  let opts = {};
 
   // if a js/json configuration file is provided require it
-  var configFile = argv.config;
+  const configFile = argv.config;
   if (configFile) {
     opts = require(path.resolve(configFile));
   }
@@ -54,15 +54,15 @@ if (argv.help || !argv._.length) {
     'timeout',
     'tcpTimeout',
     'verbose',
-    'window'
-  ].reduce(function(accum, x) {
+    'window',
+  ].reduce(function (accum, x) {
     if (argv[x]) {
       accum[x] = argv[x];
     }
     return accum;
   }, opts);
 
-  waitOn(opts, function(err) {
+  waitOn(opts, function (err) {
     if (err) {
       return errorExit(err);
     }

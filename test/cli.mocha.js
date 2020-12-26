@@ -18,15 +18,15 @@ const CLI_PATH = path.resolve(__dirname, '../bin/wait-on');
 temp.track(); // cleanup files on exit
 
 function execCLI(args, options) {
-  var fullArgs = [CLI_PATH].concat(args);
+  const fullArgs = [CLI_PATH].concat(args);
   return childProcess.spawn(process.execPath, fullArgs, options);
 }
 
-var FAST_OPTS = '-t 1000 -i 100 -w 100'.split(' ');
+const FAST_OPTS = '-t 1000 -i 100 -w 100'.split(' ');
 
 describe('cli', function () {
   this.timeout(3000);
-  var httpServer = null;
+  let httpServer = null;
 
   afterEach(function (done) {
     if (httpServer) {
@@ -39,7 +39,7 @@ describe('cli', function () {
   it('should succeed when file resources are available', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')],
       };
       fs.writeFileSync(opts.resources[0], 'data1');
@@ -56,7 +56,7 @@ describe('cli', function () {
   it('should succeed when file resources are become available later', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')],
       };
 
@@ -74,7 +74,7 @@ describe('cli', function () {
   });
 
   it('should succeed when http resources become available later', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:8123', 'http://localhost:8123/foo'],
     };
 
@@ -92,7 +92,7 @@ describe('cli', function () {
   });
 
   it('should succeed when http resources become available later via redirect', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:8123'],
     };
 
@@ -114,7 +114,7 @@ describe('cli', function () {
   });
 
   it('should succeed when http GET resources become available later', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http-get://localhost:8124', 'http-get://localhost:8124/foo'],
     };
 
@@ -132,7 +132,7 @@ describe('cli', function () {
   });
 
   it('should succeed when http GET resources become available later via redirect', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http-get://localhost:8124'],
     };
 
@@ -155,7 +155,7 @@ describe('cli', function () {
 
   /*
   it('should succeed when an https resource is available', function (done) {
-    var opts = {
+    const opts = {
       resources: [
         'https://www.google.com'
       ]
@@ -170,7 +170,7 @@ describe('cli', function () {
   */
 
   it('should succeed when a service is listening to tcp port', function (done) {
-    var opts = {
+    const opts = {
       resources: ['tcp:localhost:3030', 'tcp:3030'],
     };
 
@@ -188,11 +188,11 @@ describe('cli', function () {
   });
 
   it('should succeed when a service is listening to a socket', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['socket:' + socketPath],
       };
 
@@ -209,11 +209,11 @@ describe('cli', function () {
   });
 
   it('should succeed when a http service is listening to a socket', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
       };
 
@@ -232,11 +232,11 @@ describe('cli', function () {
   });
 
   it('should succeed when a http GET service is listening to a socket', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['http-get://unix:' + socketPath + ':/', 'http-get://unix:' + socketPath + ':/foo'],
       };
 
@@ -259,7 +259,7 @@ describe('cli', function () {
   it('should timeout when all resources are not available and timout option is specified', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo')],
         timeout: 1000,
       };
@@ -274,7 +274,7 @@ describe('cli', function () {
   it('should timeout when some resources are not available and timout option is specified', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
         timeout: 1000,
       };
@@ -288,7 +288,7 @@ describe('cli', function () {
   });
 
   it('should timeout when an http resource returns 404', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:3998'],
       timeout: 1000,
       interval: 100,
@@ -310,7 +310,7 @@ describe('cli', function () {
   });
 
   it('should timeout when an http resource is not available', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:3999'],
       timeout: 1000,
       interval: 100,
@@ -325,7 +325,7 @@ describe('cli', function () {
   });
 
   it('should timeout when an http resource does not respond before httpTimeout', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http://localhost:8125'],
       timeout: 1000,
       interval: 100,
@@ -341,7 +341,7 @@ describe('cli', function () {
     });
     httpServer.listen(8125, 'localhost');
 
-    var addOpts = '--httpTimeout 70'.split(' ');
+    const addOpts = '--httpTimeout 70'.split(' ');
     // timeout, interval, and window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS).concat(addOpts), {}).on('exit', function (code) {
       expect(code).toNotBe(0);
@@ -350,7 +350,7 @@ describe('cli', function () {
   });
 
   it('should timeout when an http GET resource is not available', function (done) {
-    var opts = {
+    const opts = {
       resources: ['http-get://localhost:3999'],
       timeout: 1000,
       interval: 100,
@@ -365,7 +365,7 @@ describe('cli', function () {
   });
 
   it('should timeout when an https resource is not available', function (done) {
-    var opts = {
+    const opts = {
       resources: ['https://localhost:3010/foo/bar'],
       timeout: 1000,
       interval: 100,
@@ -380,7 +380,7 @@ describe('cli', function () {
   });
 
   it('should timeout when an https GET resource is not available', function (done) {
-    var opts = {
+    const opts = {
       resources: ['https-get://localhost:3010/foo/bar'],
       timeout: 1000,
       interval: 100,
@@ -395,7 +395,7 @@ describe('cli', function () {
   });
 
   it('should timeout when a service is not listening to tcp port', function (done) {
-    var opts = {
+    const opts = {
       resources: ['tcp:localhost:3010'],
       timeout: 1000,
     };
@@ -408,13 +408,13 @@ describe('cli', function () {
   });
 
   it('should timeout when a service host is unreachable', function (done) {
-    var opts = {
+    const opts = {
       resources: ['tcp:256.0.0.1:1234'],
       timeout: 1000,
       tcpTimeout: 1000,
     };
 
-    var addOpts = '--tcpTimeout 1000'.split(' ');
+    const addOpts = '--tcpTimeout 1000'.split(' ');
     // timeout is in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS).concat(addOpts), {}).on('exit', function (code) {
       expect(code).toNotBe(0);
@@ -423,11 +423,11 @@ describe('cli', function () {
   });
 
   it('should timeout when a service is not listening to a socket', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['socket:' + socketPath],
         timeout: 1000,
         interval: 100,
@@ -443,11 +443,11 @@ describe('cli', function () {
   });
 
   it('should timeout when an http service listening to a socket returns 404', function (done) {
-    var socketPath;
+    let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
-      var opts = {
+      const opts = {
         resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
         timeout: 1000,
         interval: 100,
@@ -473,10 +473,10 @@ describe('cli', function () {
   it('should succeed when file resources are not available in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
       };
-      var OPTS = FAST_OPTS.concat(['-r']);
+      const OPTS = FAST_OPTS.concat(['-r']);
       execCLI(opts.resources.concat(OPTS), {}).on('exit', function (code) {
         expect(code).toBe(0);
         done();
@@ -487,7 +487,7 @@ describe('cli', function () {
   it('should succeed when file resources are not available later in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
       };
       fs.writeFileSync(opts.resources[0], 'data1');
@@ -496,7 +496,7 @@ describe('cli', function () {
         fs.unlinkSync(opts.resources[0]);
         fs.unlinkSync(opts.resources[1]);
       }, 300);
-      var OPTS = FAST_OPTS.concat(['-r']);
+      const OPTS = FAST_OPTS.concat(['-r']);
       execCLI(opts.resources.concat(OPTS), {}).on('exit', function (code) {
         expect(code).toBe(0);
         done();
@@ -507,12 +507,12 @@ describe('cli', function () {
   it('should timeout when file resources are available in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      var opts = {
+      const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
       };
       fs.writeFileSync(opts.resources[0], 'data1');
       fs.writeFileSync(opts.resources[1], 'data2');
-      var OPTS = FAST_OPTS.concat(['-r']);
+      const OPTS = FAST_OPTS.concat(['-r']);
       execCLI(opts.resources.concat(OPTS), {}).on('exit', function (code) {
         expect(code).toNotBe(0);
         done();
@@ -521,13 +521,13 @@ describe('cli', function () {
   });
 
   it('should succeed when a service host is unreachable in reverse mode', function (done) {
-    var opts = {
+    const opts = {
       resources: ['tcp:256.0.0.1:1234'],
       timeout: 1000,
       tcpTimeout: 1000,
     };
     // timeout is in FAST_OPTS
-    var OPTS = FAST_OPTS.concat(['-r', '--tcpTimeout', '1000']);
+    const OPTS = FAST_OPTS.concat(['-r', '--tcpTimeout', '1000']);
     execCLI(opts.resources.concat(OPTS), {}).on('exit', function (code) {
       expect(code).toBe(0);
       done();
