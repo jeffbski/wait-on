@@ -31,7 +31,7 @@ describe('api', function () {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
-        resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')],
+        resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')]
       };
       fs.writeFileSync(opts.resources[0], 'data1');
       mkdirp.sync(path.dirname(opts.resources[1]));
@@ -47,7 +47,7 @@ describe('api', function () {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
-        resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')],
+        resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')]
       };
 
       setTimeout(function () {
@@ -65,7 +65,7 @@ describe('api', function () {
 
   it('should succeed when http resources are become available later', function (done) {
     const opts = {
-      resources: ['http://localhost:3000', 'http://localhost:3000/foo'],
+      resources: ['http://localhost:3000', 'http://localhost:3000/foo']
     };
 
     setTimeout(function () {
@@ -86,7 +86,7 @@ describe('api', function () {
       resources: ['http://localhost:3000'],
       validateStatus: function (status) {
         return status === 401 || (status >= 200 && status < 300);
-      },
+      }
     };
 
     setTimeout(function () {
@@ -106,7 +106,7 @@ describe('api', function () {
   it('should succeed when http resource become available later via redirect', function (done) {
     const opts = {
       // followRedirect: true // default is true
-      resources: ['http://localhost:3000'],
+      resources: ['http://localhost:3000']
     };
 
     setTimeout(function () {
@@ -128,7 +128,7 @@ describe('api', function () {
 
   it('should succeed when http GET resources become available later', function (done) {
     const opts = {
-      resources: ['http-get://localhost:3011', 'http-get://localhost:3011/foo'],
+      resources: ['http-get://localhost:3011', 'http-get://localhost:3011/foo']
     };
 
     setTimeout(function () {
@@ -147,7 +147,7 @@ describe('api', function () {
   it('should succeed when http GET resource become available later via redirect', function (done) {
     const opts = {
       // followRedirect: true, // default is true
-      resources: ['http-get://localhost:3000'],
+      resources: ['http-get://localhost:3000']
     };
 
     setTimeout(function () {
@@ -197,7 +197,7 @@ describe('api', function () {
 
   it('should succeed when a service is listening to tcp port', function (done) {
     const opts = {
-      resources: ['tcp:localhost:3001', 'tcp:3001'],
+      resources: ['tcp:localhost:3001', 'tcp:3001']
     };
 
     setTimeout(function () {
@@ -219,7 +219,7 @@ describe('api', function () {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
-        resources: ['socket:' + socketPath],
+        resources: ['socket:' + socketPath]
       };
 
       setTimeout(function () {
@@ -240,7 +240,7 @@ describe('api', function () {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
-        resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
+        resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo']
       };
 
       setTimeout(function () {
@@ -263,7 +263,7 @@ describe('api', function () {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
-        resources: ['http-get://unix:' + socketPath + ':/', 'http-get://unix:' + socketPath + ':/foo'],
+        resources: ['http-get://unix:' + socketPath + ':/', 'http-get://unix:' + socketPath + ':/foo']
       };
 
       setTimeout(function () {
@@ -287,7 +287,7 @@ describe('api', function () {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo')],
-        timeout: 1000,
+        timeout: 1000
       };
       waitOn(opts, function (err) {
         expect(err).toExist();
@@ -301,7 +301,7 @@ describe('api', function () {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
-        timeout: 1000,
+        timeout: 1000
       };
       fs.writeFile(opts.resources[0], 'data', function () {});
       waitOn(opts, function (err) {
@@ -316,7 +316,7 @@ describe('api', function () {
       resources: ['http://localhost:3002'],
       timeout: 1000,
       interval: 100,
-      window: 100,
+      window: 100
     };
 
     setTimeout(function () {
@@ -338,7 +338,7 @@ describe('api', function () {
       resources: ['http://localhost:3010'],
       timeout: 1000,
       interval: 100,
-      window: 100,
+      window: 100
     };
 
     waitOn(opts, function (err) {
@@ -353,7 +353,7 @@ describe('api', function () {
       timeout: 1000,
       interval: 100,
       window: 100,
-      httpTimeout: 70,
+      httpTimeout: 70
     };
 
     httpServer = http.createServer().on('request', function (req, res) {
@@ -376,7 +376,7 @@ describe('api', function () {
       interval: 100,
       window: 100,
       followRedirect: false,
-      resources: ['http://localhost:3000'],
+      resources: ['http://localhost:3000']
     };
 
     httpServer = http.createServer().on('request', function (req, res) {
@@ -399,7 +399,7 @@ describe('api', function () {
       resources: ['http-get://localhost:3010'],
       timeout: 1000,
       interval: 100,
-      window: 100,
+      window: 100
     };
 
     waitOn(opts, function (err) {
@@ -413,7 +413,7 @@ describe('api', function () {
       resources: ['https://localhost:3010/foo/bar'],
       timeout: 1000,
       interval: 100,
-      window: 100,
+      window: 100
     };
 
     waitOn(opts, function (err) {
@@ -427,7 +427,7 @@ describe('api', function () {
       resources: ['https-get://localhost:3010/foo/bar'],
       timeout: 1000,
       interval: 100,
-      window: 100,
+      window: 100
     };
 
     waitOn(opts, function (err) {
@@ -442,7 +442,7 @@ describe('api', function () {
       interval: 100,
       window: 100,
       followRedirect: false,
-      resources: ['http-get://localhost:3000'],
+      resources: ['http-get://localhost:3000']
     };
 
     httpServer = http.createServer().on('request', function (req, res) {
@@ -463,7 +463,7 @@ describe('api', function () {
   it('should timeout when a service is not listening to tcp port', function (done) {
     const opts = {
       resources: ['tcp:localhost:3010'],
-      timeout: 1000,
+      timeout: 1000
     };
 
     waitOn(opts, function (err) {
@@ -481,7 +481,7 @@ describe('api', function () {
         resources: ['socket:' + socketPath],
         timeout: 1000,
         interval: 100,
-        window: 100,
+        window: 100
       };
 
       waitOn(opts, function (err) {
@@ -495,7 +495,7 @@ describe('api', function () {
     const opts = {
       resources: ['tcp:256.0.0.1:1234'],
       timeout: 1000,
-      tcpTimeout: 1000,
+      tcpTimeout: 1000
     };
 
     waitOn(opts, function (err) {
@@ -513,7 +513,7 @@ describe('api', function () {
         resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
         timeout: 1000,
         interval: 100,
-        window: 100,
+        window: 100
       };
 
       setTimeout(function () {
@@ -540,7 +540,7 @@ describe('api', function () {
         resources: ['package.json', 'http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
         timeout: 1000,
         interval: 100,
-        window: 100,
+        window: 100
       };
 
       httpServer = http.createServer().on('request', function (req, res) {
@@ -565,7 +565,7 @@ describe('api', function () {
       timeout: 1000,
       tcpTimeout: 1000,
       reverse: true,
-      window: 100,
+      window: 100
     };
 
     waitOn(opts, function (err) {
@@ -580,7 +580,7 @@ describe('api', function () {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
-        reverse: true,
+        reverse: true
       };
       waitOn(opts, function (err) {
         expect(err).toNotExist();
@@ -594,7 +594,7 @@ describe('api', function () {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
-        reverse: true,
+        reverse: true
       };
       fs.writeFileSync(opts.resources[0], 'data1');
       fs.writeFileSync(opts.resources[1], 'data2');
@@ -615,7 +615,7 @@ describe('api', function () {
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
         reverse: true,
-        timeout: 1000,
+        timeout: 1000
       };
       fs.writeFileSync(opts.resources[0], 'data1');
       fs.writeFileSync(opts.resources[1], 'data2');
@@ -631,7 +631,7 @@ describe('api', function () {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
-          resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
+          resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')]
         };
         fs.writeFileSync(opts.resources[0], 'data1');
         fs.writeFileSync(opts.resources[1], 'data2');
@@ -649,7 +649,7 @@ describe('api', function () {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
-          resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
+          resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')]
         };
 
         setTimeout(function () {
@@ -672,7 +672,7 @@ describe('api', function () {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo')],
-          timeout: 1000,
+          timeout: 1000
         };
         waitOn(opts)
           .then(function () {
@@ -690,7 +690,7 @@ describe('api', function () {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
-          timeout: 1000,
+          timeout: 1000
         };
         fs.writeFile(opts.resources[0], 'data', function () {});
         waitOn(opts)
@@ -709,7 +709,7 @@ describe('api', function () {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
-          reverse: true,
+          reverse: true
         };
         waitOn(opts)
           .then(function () {
@@ -726,7 +726,7 @@ describe('api', function () {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
-          reverse: true,
+          reverse: true
         };
         fs.writeFileSync(opts.resources[0], 'data1');
         fs.writeFileSync(opts.resources[1], 'data2');
@@ -750,7 +750,7 @@ describe('api', function () {
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
           reverse: true,
-          timeout: 1000,
+          timeout: 1000
         };
         fs.writeFileSync(opts.resources[0], 'data1');
         fs.writeFileSync(opts.resources[1], 'data2');

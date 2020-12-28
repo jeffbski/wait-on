@@ -18,8 +18,8 @@ const minimistOpts = {
     t: 'timeout',
     v: 'verbose',
     w: 'window',
-    h: 'help',
-  },
+    h: 'help'
+  }
 };
 
 const argv = minimist(process.argv.slice(2), minimistOpts);
@@ -42,7 +42,7 @@ if (argv.help || !hasResources) {
   }
 
   // now check for specific options and set those
-  opts = [
+  const opts = [
     'delay',
     'httpTimeout',
     'interval',
@@ -52,13 +52,13 @@ if (argv.help || !hasResources) {
     'timeout',
     'tcpTimeout',
     'verbose',
-    'window',
+    'window'
   ].reduce(function (accum, x) {
     if (argv[x]) {
       accum[x] = argv[x];
     }
     return accum;
-  }, opts);
+  }, configOpts);
 
   waitOn(opts, function (err) {
     if (err) {
