@@ -232,6 +232,7 @@ waitOn(opts, [cb]) - function which triggers resource checks
 - opts.delay - optional initial delay in ms, default 0
 - opts.interval - optional poll resource interval in ms, default 250ms
 - opts.log - optional flag which outputs to stdout, remaining resources waited on and when complete or errored
+- opts.resources - optional array of string resources to wait for if none are specified via command line
 - opts.reverse - optional flag to reverse operation so checks are for resources being NOT available, default false
 - opts.simultaneous - optional count to limit concurrent connections per resource at a time, setting to 1 waits for previous connection to succeed, fail, or timeout before sending another, default infinity
 - opts.timeout - optional timeout in ms, default Infinity. Aborts with error.

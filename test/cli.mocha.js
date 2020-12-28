@@ -533,4 +533,40 @@ describe('cli', function () {
       done();
     });
   });
+
+  context('resources are specified in config', () => {
+    it('should succeed when http resources become available later', function (done) {
+      setTimeout(function () {
+        httpServer = http.createServer().on('request', function (req, res) {
+          res.end('data');
+        });
+        httpServer.listen(8123, 'localhost');
+      }, 300);
+
+      execCLI(['--config', path.join(__dirname, 'config-http-resources.js')].concat(FAST_OPTS), {}).on(
+        'exit',
+        function (code) {
+          expect(code).toBe(0);
+          done();
+        }
+      );
+    });
+
+    it('should succeed when http resources from command line become available later (ignores config resources)', function (done) {
+      setTimeout(function () {
+        httpServer = http.createServer().on('request', function (req, res) {
+          res.end('data');
+        });
+        httpServer.listen(3030, 'localhost');
+      }, 300);
+
+      execCLI(
+        ['--config', path.join(__dirname, 'config-http-resources.js'), 'http://localhost:3030/'].concat(FAST_OPTS),
+        {}
+      ).on('exit', function (code) {
+        expect(code).toBe(0);
+        done();
+      });
+    });
+  });
 });
