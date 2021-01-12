@@ -533,4 +533,132 @@ describe('cli', function () {
       done();
     });
   });
+
+  describe('command', function () {
+    describe('normal mode', function () {
+      it('should succeed when command passes', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const fileExists1 = path.resolve(dirPath, 'exists1')
+          const fileExists2 = path.resolve(dirPath, 'exists2')
+          const opts = {
+            resources: [
+              `command:ls ${fileExists1}`,
+              `command:ls ${fileExists2}`
+            ],
+          };
+          fs.writeFileSync(fileExists1, 'data1');
+          fs.writeFileSync(fileExists2, 'data2');
+
+          execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
+            expect(code).toBe(0);
+            done();
+          });
+        });
+      });
+
+      it('should succeed when a command passes later', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const fileWillExist1 = path.resolve(dirPath, 'willexist1')
+          const fileWillExist2 = path.resolve(dirPath, 'willexist2')
+          const opts = {
+            resources: [
+              `command:ls ${fileWillExist1}`,
+              `command:ls ${fileWillExist2}`
+            ],
+          };
+          setTimeout(function () {
+            fs.writeFileSync(fileWillExist1, 'data1');
+            fs.writeFileSync(fileWillExist2, 'data2');
+          }, 300);
+
+          execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
+            expect(code).toBe(0);
+            done();
+          });
+        });
+      });
+
+      it('should timeout when command fails', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const notExists = path.resolve(dirPath, 'NOTexists')
+          const opts = {
+            resources: [
+              `command:ls ${notExists}`
+            ],
+          };
+
+          execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
+            expect(code).toNotBe(0);
+            done();
+          });
+        });
+      });
+    });
+
+    describe('reverse mode', function () {
+      const REV_OPTS = FAST_OPTS.concat(['-r']);
+
+      it('should succeed when command fails in reverse mode', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const notExists = path.resolve(dirPath, 'NOTexists')
+          const opts = {
+            resources: [
+              `command:ls ${notExists}`,
+            ],
+          };
+
+          execCLI(opts.resources.concat(REV_OPTS), {}).on('exit', function (code) {
+            expect(code).toBe(0);
+            done();
+          });
+        });
+      });
+
+      it('should succeed when command fails later in reverse mode', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const willBeDeleted1 = path.resolve(dirPath, 'deleteme1')
+          const willBeDeleted2 = path.resolve(dirPath, 'deleteme2')
+          const opts = {
+            resources: [
+              `command:ls ${willBeDeleted1}`,
+              `command:ls ${willBeDeleted2}`
+            ],
+          };
+          fs.writeFileSync(willBeDeleted1, 'data1');
+          fs.writeFileSync(willBeDeleted2, 'data2');
+          setTimeout(function () {
+            fs.unlinkSync(willBeDeleted1);
+            fs.unlinkSync(willBeDeleted2);
+          }, 300);
+
+          execCLI(opts.resources.concat(REV_OPTS), {}).on('exit', function (code) {
+            expect(code).toBe(0);
+            done();
+          });
+        });
+      });
+
+      it('should timeout when command passes in reverse mode', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const exists = path.resolve(dirPath, 'exists1')
+          const opts = {
+            resources: [
+              `command:ls ${exists}`
+            ],
+          };
+          fs.writeFileSync(exists, 'data1');
+          execCLI(opts.resources.concat(REV_OPTS), {}).on('exit', function (code) {
+            expect(code).toNotBe(0);
+            done();
+          });
+        });
+      });
+    });
+  });
 });
