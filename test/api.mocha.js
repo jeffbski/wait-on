@@ -765,4 +765,154 @@ describe('api', function () {
       });
     });
   });
+
+  describe('command', function () {
+    describe('normal mode', function () {
+      it('should succeed when command passes', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const fileExists1 = path.resolve(dirPath, 'exists1')
+          const fileExists2 = path.resolve(dirPath, 'exists2')
+          const opts = {
+            resources: [
+              `command:ls ${fileExists1}`,
+              `command:ls ${fileExists2}`
+            ],
+          };
+          fs.writeFileSync(fileExists1, 'data1');
+          fs.writeFileSync(fileExists2, 'data2');
+
+          waitOn(opts)
+            .then(function () {
+              done();
+            })
+            .catch(function (err) {
+              done(err);
+            });
+        });
+      });
+
+      it('should succeed when a command passes later', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const fileWillExist1 = path.resolve(dirPath, 'willexist1')
+          const fileWillExist2 = path.resolve(dirPath, 'willexist2')
+          const opts = {
+            resources: [
+              `command:ls ${fileWillExist1}`,
+              `command:ls ${fileWillExist2}`
+            ],
+          };
+          setTimeout(function () {
+            fs.writeFileSync(fileWillExist1, 'data1');
+            fs.writeFileSync(fileWillExist2, 'data2');
+          }, 300);
+
+          waitOn(opts)
+            .then(function () {
+              done();
+            })
+            .catch(function (err) {
+              done(err);
+            });
+        });
+      });
+
+      it('should timeout when command fails', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const notExists = path.resolve(dirPath, 'NOTexists')
+          const opts = {
+            resources: [
+              `command:ls ${notExists}`
+            ],
+            timout: 1000,
+          };
+
+          waitOn(opts)
+            .then(function () {
+              done(new Error('Should not be resolved'));
+            })
+            .catch(function (err) {
+              expect(err).toExist();
+              done();
+            });
+        });
+      });
+    });
+
+    describe('reverse mode', function () {
+      it('should succeed when command fails in reverse mode', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const notExists = path.resolve(dirPath, 'NOTexists')
+          const opts = {
+            resources: [
+              `command:ls ${notExists}`,
+            ],
+            reverse: true
+          };
+
+          waitOn(opts)
+            .then(function () {
+              done();
+            })
+            .catch(function (err) {
+              done(err);
+            });
+        });
+      });
+
+      it('should succeed when command fails later in reverse mode', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const willBeDeleted1 = path.resolve(dirPath, 'deleteme1')
+          const willBeDeleted2 = path.resolve(dirPath, 'deleteme2')
+          const opts = {
+            resources: [
+              `command:ls ${willBeDeleted1}`,
+              `command:ls ${willBeDeleted2}`
+            ],
+          };
+          fs.writeFileSync(willBeDeleted1, 'data1');
+          fs.writeFileSync(willBeDeleted2, 'data2');
+          setTimeout(function () {
+            fs.unlinkSync(willBeDeleted1);
+            fs.unlinkSync(willBeDeleted2);
+          }, 300);
+
+          waitOn(opts)
+            .then(function () {
+              done();
+            })
+            .catch(function (err) {
+              done(err);
+            });
+        });
+      });
+
+      it('should timeout when command passes in reverse mode', function (done) {
+        temp.mkdir({}, function (err, dirPath) {
+          if (err) return done(err);
+          const exists = path.resolve(dirPath, 'exists1')
+          const opts = {
+            resources: [
+              `command:ls ${exists}`
+            ],
+            reverse: true,
+            timeout: 1000,
+          };
+          fs.writeFileSync(exists, 'data1');
+          waitOn(opts)
+            .then(function () {
+              done(new Error('Should not be resolved'));
+            })
+            .catch(function (err) {
+              expect(err).toExist();
+              done();
+            });
+        });
+      });
+    });
+  });
 });
