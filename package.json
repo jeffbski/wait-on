@@ -40,7 +40,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "joi": "^17.3.0",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "minimist": "^1.2.5",
     "rxjs": "^6.6.3"
   },
