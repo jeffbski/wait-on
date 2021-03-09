@@ -68,10 +68,17 @@ Standard Options:
 
   Maximum time in ms to wait before exiting with failure (1) code,
   default Infinity
+  Use postfix 'ms', 's', 'm' or 'h' to change the unit.
 
   --tcpTimeout
 
   Maximum time in ms for tcp connect, default 300ms
+  Use postfix 'ms', 's', 'm' or 'h' to change the unit.
+
+  --httpTimeout
+
+  Maximum time to wait for the HTTP request, default Infinity
+  Use postfix 'ms', 's', 'm' or 'h' to change the unit.
 
  -v, --verbose
 
