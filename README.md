@@ -67,7 +67,8 @@ Description:
      once resources are available. ex: wait-on f1 && NEXT_CMD
 
      resources types are defined by their prefix, if no prefix is
-     present, the resource is assumed to be of type 'file'
+     present, the resource is assumed to be of type 'file'. Resources
+     can also be provided in the config file.
 
      resource prefixes are:
 
@@ -86,7 +87,7 @@ Standard Options:
 
  -c, --config
 
-  js or json config file, useful for http(s) options
+  js or json config file, useful for http(s) options and resources
 
  -d, --delay
 
@@ -155,7 +156,7 @@ var opts = {
     'tcp:foo.com:8000',
     'socket:/my/sock',
     'http://unix:/my/sock:/my/url',
-    'http-get://unix:/my/sock:/my/url',
+    'http-get://unix:/my/sock:/my/url'
   ],
   delay: 1000, // initial delay in ms, default 0
   interval: 100, // poll interval in ms, default 250ms
@@ -188,16 +189,16 @@ var opts = {
   } */,
   auth: {
     user: 'theuser', // or username
-    pass: 'thepassword', // or password
+    pass: 'thepassword' // or password
   },
   strictSSL: false,
   followRedirect: true,
   headers: {
-    'x-custom': 'headers',
+    'x-custom': 'headers'
   },
   validateStatus: function (status) {
     return status >= 200 && status < 300; // default if not provided
-  },
+  }
 };
 
 // Usage with callback function
@@ -232,6 +233,7 @@ waitOn(opts, [cb]) - function which triggers resource checks
 - opts.delay - optional initial delay in ms, default 0
 - opts.interval - optional poll resource interval in ms, default 250ms
 - opts.log - optional flag which outputs to stdout, remaining resources waited on and when complete or errored
+- opts.resources - optional array of string resources to wait for if none are specified via command line
 - opts.reverse - optional flag to reverse operation so checks are for resources being NOT available, default false
 - opts.simultaneous - optional count to limit concurrent connections per resource at a time, setting to 1 waits for previous connection to succeed, fail, or timeout before sending another, default infinity
 - opts.timeout - optional timeout in ms, default Infinity. Aborts with error.

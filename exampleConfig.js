@@ -13,11 +13,13 @@ module.exports = {
   passphrase: 'yourpassphrase',
   auth: {
     user: 'yourusername',
-    pass: 'yourpassword',
+    pass: 'yourpassword'
   },
   strictSSL: false,
   followRedirect: false,
   headers: {
-    'x-custom': 'headers',
+    'x-custom': 'headers'
   },
+  // optional default resources if not specified in command args
+  resources: ['http://foo/bar', 'http://cat/dog']
 };

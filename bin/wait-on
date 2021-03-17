@@ -18,13 +18,16 @@ const minimistOpts = {
     t: 'timeout',
     v: 'verbose',
     w: 'window',
-    h: 'help',
-  },
+    h: 'help'
+  }
 };
 
 const argv = minimist(process.argv.slice(2), minimistOpts);
+// if a js/json configuration file is provided require it
+const configOpts = argv.config ? require(path.resolve(argv.config)) : {};
+const hasResources = argv._.length || (configOpts.resources && configOpts.resources.length);
 
-if (argv.help || !argv._.length) {
+if (argv.help || !hasResources) {
   // help
   fs.createReadStream(path.join(__dirname, '/usage.txt'))
     .pipe(process.stdout)
@@ -32,19 +35,14 @@ if (argv.help || !argv._.length) {
       process.exit(1);
     });
 } else {
-  let opts = {};
-
-  // if a js/json configuration file is provided require it
-  const configFile = argv.config;
-  if (configFile) {
-    opts = require(path.resolve(configFile));
+  // if resources are present in the command line then they take
+  // precedence over those in the config file.
+  if (argv._.length) {
+    configOpts.resources = argv._;
   }
 
-  // add in the resources listed on the command line
-  opts.resources = argv._;
-
   // now check for specific options and set those
-  opts = [
+  const opts = [
     'delay',
     'httpTimeout',
     'interval',
@@ -54,13 +52,13 @@ if (argv.help || !argv._.length) {
     'timeout',
     'tcpTimeout',
     'verbose',
-    'window',
+    'window'
   ].reduce(function (accum, x) {
     if (argv[x]) {
       accum[x] = argv[x];
     }
     return accum;
-  }, opts);
+  }, configOpts);
 
   waitOn(opts, function (err) {
     if (err) {
