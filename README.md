@@ -67,7 +67,8 @@ Description:
      once resources are available. ex: wait-on f1 && NEXT_CMD
 
      resources types are defined by their prefix, if no prefix is
-     present, the resource is assumed to be of type 'file'
+     present, the resource is assumed to be of type 'file'. Resources
+     can also be provided in the config file.
 
      resource prefixes are:
 
@@ -86,7 +87,7 @@ Standard Options:
 
  -c, --config
 
-  js or json config file, useful for http(s) options
+  js or json config file, useful for http(s) options and resources
 
  -d, --delay
 
@@ -155,7 +156,7 @@ var opts = {
     'tcp:foo.com:8000',
     'socket:/my/sock',
     'http://unix:/my/sock:/my/url',
-    'http-get://unix:/my/sock:/my/url',
+    'http-get://unix:/my/sock:/my/url'
   ],
   delay: 1000, // initial delay in ms, default 0
   interval: 100, // poll interval in ms, default 250ms
@@ -188,16 +189,16 @@ var opts = {
   } */,
   auth: {
     user: 'theuser', // or username
-    pass: 'thepassword', // or password
+    pass: 'thepassword' // or password
   },
   strictSSL: false,
   followRedirect: true,
   headers: {
-    'x-custom': 'headers',
+    'x-custom': 'headers'
   },
   validateStatus: function (status) {
     return status >= 200 && status < 300; // default if not provided
-  },
+  }
 };
 
 // Usage with callback function
