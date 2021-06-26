@@ -24,11 +24,11 @@
     "node": ">=8.9.0"
   },
   "devDependencies": {
-    "eslint": "^7.16.0",
+    "eslint": "^7.29.0",
     "eslint-config-prettier": "^7.1.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-chai-friendly": "^0.7.1",
-    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^5.0.0",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "joi": "^17.3.0",
+    "joi": "^17.4.0",
     "lodash": "^4.17.21",
     "minimist": "^1.2.5",
     "rxjs": "^6.6.3"
