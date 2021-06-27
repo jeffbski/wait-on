@@ -12,8 +12,8 @@ module.exports = {
   ],
   passphrase: 'yourpassphrase',
   auth: {
-    user: 'yourusername',
-    pass: 'yourpassword'
+    username: 'yourusername',
+    password: 'yourpassword'
   },
   strictSSL: false,
   followRedirect: false,
