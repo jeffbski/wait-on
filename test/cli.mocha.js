@@ -22,7 +22,7 @@ function execCLI(args, options) {
   return childProcess.spawn(process.execPath, fullArgs, options);
 }
 
-const FAST_OPTS = '-t 1000 -i 100 -w 100'.split(' ');
+const FAST_OPTS = '-t 1s -i 100 -w 100'.split(' ');
 
 describe('cli', function () {
   this.timeout(3000);
