@@ -46,6 +46,11 @@ Standard Options:
   Maximum time in ms to wait for an HTTP HEAD/GET request, default 0
   which results in using the OS default
 
+ --httpContains
+
+  string to check in http response, will wait until response body contains this value. 
+  To be used with http(s)-get
+
  -i, --interval
 
   Interval to poll resources in ms, default 250ms

@@ -568,5 +568,42 @@ describe('cli', function () {
         done();
       });
     });
+
+    it('should succeed when http response contains httpContains value', function (done) {
+      setTimeout(function () {
+        httpServer = http.createServer().on('request', function (req, res) {
+          res.write("abc123");
+          res.end('data');
+        });
+        httpServer.listen(3030, 'localhost');
+      }, 300);
+
+      execCLI(
+        ['--httpContains abc123', 'http-get://localhost:3030/'].concat(FAST_OPTS),
+        {}
+      ).on('exit', function (code) {
+        expect(code).toBe(0);
+        done();
+      });
+    });
+
+    it('should timeout when http response does not contain httpContains value', function (done) {
+      setTimeout(function () {
+        httpServer = http.createServer().on('request', function (req, res) {
+          res.write("abc123");
+          res.end('data');
+        });
+        httpServer.listen(3030, 'localhost');
+      }, 300);
+
+      execCLI(
+        ['--httpContains 1234', 'http-get://localhost:3030/'].concat(FAST_OPTS),
+        {}
+      ).on('exit', function (code) {
+        expect(code).toBe(0);
+        done();
+      });
+    });    
+
   });
 });
