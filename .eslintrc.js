@@ -1,8 +1,7 @@
 module.exports = {
   env: {
-    mocha: true,
+    jest: true,
   },
-  plugins: ['chai-friendly'],
   extends: ['standard', 'prettier', 'prettier/standard'],
   root: true,
   rules: {
@@ -13,8 +12,5 @@ module.exports = {
         varsIgnorePattern: 'should|expect',
       },
     ],
-    // disable the original no-unused-expressions use chai-friendly
-    'no-unused-expressions': 'off',
-    'chai-friendly/no-unused-expressions': 'error',
   },
 };

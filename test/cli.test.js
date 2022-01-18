@@ -7,12 +7,6 @@ const path = require('path');
 const temp = require('temp');
 const mkdirp = require('mkdirp');
 
-const mocha = require('mocha');
-const describe = mocha.describe;
-const it = mocha.it;
-const afterEach = mocha.afterEach;
-const expect = require('expect-legacy');
-
 const CLI_PATH = path.resolve(__dirname, '../bin/wait-on');
 
 temp.track(); // cleanup files on exit
@@ -25,7 +19,6 @@ function execCLI(args, options) {
 const FAST_OPTS = '-t 1000 -i 100 -w 100'.split(' ');
 
 describe('cli', function () {
-  this.timeout(3000);
   let httpServer = null;
 
   afterEach(function (done) {
@@ -265,7 +258,7 @@ describe('cli', function () {
       };
       // timeout is in FAST_OPTS
       execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-        expect(code).toNotBe(0);
+        expect(code).not.toBe(0);
         done();
       });
     });
@@ -281,7 +274,7 @@ describe('cli', function () {
       fs.writeFile(opts.resources[0], 'data', function () {});
       // timeout is in FAST_OPTS
       execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-        expect(code).toNotBe(0);
+        expect(code).not.toBe(0);
         done();
       });
     });
@@ -304,7 +297,7 @@ describe('cli', function () {
     }, 300);
     // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-      expect(code).toNotBe(0);
+      expect(code).not.toBe(0);
       done();
     });
   });
@@ -319,7 +312,7 @@ describe('cli', function () {
 
     // timeout is in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-      expect(code).toNotBe(0);
+      expect(code).not.toBe(0);
       done();
     });
   });
@@ -344,7 +337,7 @@ describe('cli', function () {
     const addOpts = '--httpTimeout 70'.split(' ');
     // timeout, interval, and window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS).concat(addOpts), {}).on('exit', function (code) {
-      expect(code).toNotBe(0);
+      expect(code).not.toBe(0);
       done();
     });
   });
@@ -359,7 +352,7 @@ describe('cli', function () {
 
     // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-      expect(code).toNotBe(0);
+      expect(code).not.toBe(0);
       done();
     });
   });
@@ -374,7 +367,7 @@ describe('cli', function () {
 
     // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-      expect(code).toNotBe(0);
+      expect(code).not.toBe(0);
       done();
     });
   });
@@ -389,7 +382,7 @@ describe('cli', function () {
 
     // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-      expect(code).toNotBe(0);
+      expect(code).not.toBe(0);
       done();
     });
   });
@@ -402,7 +395,7 @@ describe('cli', function () {
 
     // timeout is in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-      expect(code).toNotBe(0);
+      expect(code).not.toBe(0);
       done();
     });
   });
@@ -417,7 +410,7 @@ describe('cli', function () {
     const addOpts = '--tcpTimeout 1000'.split(' ');
     // timeout is in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS).concat(addOpts), {}).on('exit', function (code) {
-      expect(code).toNotBe(0);
+      expect(code).not.toBe(0);
       done();
     });
   });
@@ -436,7 +429,7 @@ describe('cli', function () {
 
       // timeout, interval, window are in FAST_OPTS
       execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-        expect(code).toNotBe(0);
+        expect(code).not.toBe(0);
         done();
       });
     });
@@ -464,7 +457,7 @@ describe('cli', function () {
 
       // timeout, interval, window are in FAST_OPTS
       execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
-        expect(code).toNotBe(0);
+        expect(code).not.toBe(0);
         done();
       });
     });
@@ -514,7 +507,7 @@ describe('cli', function () {
       fs.writeFileSync(opts.resources[1], 'data2');
       const OPTS = FAST_OPTS.concat(['-r']);
       execCLI(opts.resources.concat(OPTS), {}).on('exit', function (code) {
-        expect(code).toNotBe(0);
+        expect(code).not.toBe(0);
         done();
       });
     });
@@ -534,7 +527,7 @@ describe('cli', function () {
     });
   });
 
-  context('resources are specified in config', () => {
+  describe('resources are specified in config', () => {
     it('should succeed when http resources become available later', function (done) {
       setTimeout(function () {
         httpServer = http.createServer().on('request', function (req, res) {
