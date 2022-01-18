@@ -23,3 +23,5 @@ function getPort() {
 }
 
 global.getPort = getPort;
+
+jest.setTimeout(10000);

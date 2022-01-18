@@ -7,12 +7,12 @@ const path = require('path');
 const temp = require('temp');
 const mkdirp = require('mkdirp');
 
-const { getPort } = require('./helpers');
+const { getPort, itConcurrent } = require('./helpers');
 
 temp.track(); // cleanup files on exit
 
 describe('api', function () {
-  it('should succeed when file resources are available', function (done) {
+  itConcurrent('should succeed when file resources are available', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -28,7 +28,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when file resources are become available later', function (done) {
+  itConcurrent('should succeed when file resources are become available later', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -48,7 +48,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when http resources are become available later', function (done) {
+  itConcurrent('should succeed when http resources are become available later', function (done) {
     const port = getPort();
     let httpServer;
 
@@ -70,7 +70,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when custom validateStatus fn is provided http resource returns 401', function (done) {
+  itConcurrent('should succeed when custom validateStatus fn is provided http resource returns 401', function (done) {
     const port = getPort();
     let httpServer;
 
@@ -96,7 +96,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when http resource become available later via redirect', function (done) {
+  itConcurrent('should succeed when http resource become available later via redirect', function (done) {
     const port = getPort();
     let httpServer;
 
@@ -123,7 +123,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when http GET resources become available later', function (done) {
+  itConcurrent('should succeed when http GET resources become available later', function (done) {
     const port = getPort();
     let httpServer;
 
@@ -145,7 +145,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when http GET resource become available later via redirect', function (done) {
+  itConcurrent('should succeed when http GET resource become available later via redirect', function (done) {
     const port = getPort();
     let httpServer;
 
@@ -173,7 +173,7 @@ describe('api', function () {
   });
 
   /*
-  it('should succeed when an https resource is available', function (done) {
+  itConcurrent('should succeed when an https resource is available', function (done) {
     const opts = {
       resources: [
         'https://www.google.com'
@@ -186,7 +186,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when an https GET resource is available', function (done) {
+  itConcurrent('should succeed when an https GET resource is available', function (done) {
     const opts = {
       resources: [
         'https-get://www.google.com'
@@ -200,7 +200,7 @@ describe('api', function () {
   });
   */
 
-  it('should succeed when a service is listening to tcp port', function (done) {
+  itConcurrent('should succeed when a service is listening to tcp port', function (done) {
     const port = getPort();
     let httpServer;
 
@@ -222,7 +222,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when a service is listening to a socket', function (done) {
+  itConcurrent('should succeed when a service is listening to a socket', function (done) {
     let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
@@ -245,7 +245,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when a http service is listening to a socket', function (done) {
+  itConcurrent('should succeed when a http service is listening to a socket', function (done) {
     let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
@@ -270,7 +270,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when a http GET service is listening to a socket', function (done) {
+  itConcurrent('should succeed when a http GET service is listening to a socket', function (done) {
     let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
@@ -297,7 +297,7 @@ describe('api', function () {
 
   // Error situations
 
-  it('should timeout when all resources are not available and timout option is specified', function (done) {
+  itConcurrent('should timeout when all resources are not available and timout option is specified', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -311,7 +311,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when some resources are not available and timout option is specified', function (done) {
+  itConcurrent('should timeout when some resources are not available and timout option is specified', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -326,7 +326,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http resource returns 404', function (done) {
+  itConcurrent('should timeout when an http resource returns 404', function (done) {
     const port = getPort();
     let httpServer;
 
@@ -352,7 +352,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http resource is not available', function (done) {
+  itConcurrent('should timeout when an http resource is not available', function (done) {
     const port = getPort();
     const opts = {
       resources: [`http://localhost:${port}`],
@@ -367,7 +367,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http resource does not respond before httpTimeout', function (done) {
+  itConcurrent('should timeout when an http resource does not respond before httpTimeout', function (done) {
     const port = getPort();
     const opts = {
       resources: [`http://localhost:${port}`],
@@ -392,7 +392,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when followRedirect is false and http resource redirects', function (done) {
+  itConcurrent('should timeout when followRedirect is false and http resource redirects', function (done) {
     const port = getPort();
     const opts = {
       timeout: 1000,
@@ -418,7 +418,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http GET resource is not available', function (done) {
+  itConcurrent('should timeout when an http GET resource is not available', function (done) {
     const port = getPort();
     const opts = {
       resources: [`http-get://localhost:${port}`],
@@ -433,7 +433,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an https resource is not available', function (done) {
+  itConcurrent('should timeout when an https resource is not available', function (done) {
     const port = getPort();
     const opts = {
       resources: [`https://localhost:${port}/foo/bar`],
@@ -448,7 +448,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an https GET resource is not available', function (done) {
+  itConcurrent('should timeout when an https GET resource is not available', function (done) {
     const port = getPort();
     const opts = {
       resources: [`https-get://localhost:${port}/foo/bar`],
@@ -463,7 +463,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when followRedirect is false and http GET resource redirects', function (done) {
+  itConcurrent('should timeout when followRedirect is false and http GET resource redirects', function (done) {
     const port = getPort();
     const opts = {
       timeout: 1000,
@@ -489,7 +489,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when a service is not listening to tcp port', function (done) {
+  itConcurrent('should timeout when a service is not listening to tcp port', function (done) {
     const port = getPort();
     const opts = {
       resources: [`tcp:localhost:${port}`],
@@ -502,7 +502,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when a service is not listening to a socket', function (done) {
+  itConcurrent('should timeout when a service is not listening to a socket', function (done) {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -521,7 +521,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when a service host is unreachable', function (done) {
+  itConcurrent('should timeout when a service host is unreachable', function (done) {
     const opts = {
       resources: ['tcp:256.0.0.1:1234'],
       timeout: 1000,
@@ -534,7 +534,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http service listening to a socket returns 404', function (done) {
+  itConcurrent('should timeout when an http service listening to a socket returns 404', function (done) {
     let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
@@ -563,7 +563,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http service listening to a socket is too slow', function (done) {
+  itConcurrent('should timeout when an http service listening to a socket is too slow', function (done) {
     let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
@@ -592,7 +592,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when a service host is unreachable in reverse mode', function (done) {
+  itConcurrent('should succeed when a service host is unreachable in reverse mode', function (done) {
     const opts = {
       resources: ['tcp:256.0.0.1:1234'],
       interval: 100,
@@ -609,7 +609,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when file resources are not available in reverse mode', function (done) {
+  itConcurrent('should succeed when file resources are not available in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -623,7 +623,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when file resources are not available later in reverse mode', function (done) {
+  itConcurrent('should succeed when file resources are not available later in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -643,7 +643,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when file resources are available in reverse mode', function (done) {
+  itConcurrent('should timeout when file resources are available in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -661,7 +661,7 @@ describe('api', function () {
   });
 
   describe('promise support', function () {
-    it('should succeed when file resources are available', function (done) {
+    itConcurrent('should succeed when file resources are available', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -679,7 +679,7 @@ describe('api', function () {
       });
     });
 
-    it('should succeed when file resources are become available later', function (done) {
+    itConcurrent('should succeed when file resources are become available later', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -701,7 +701,7 @@ describe('api', function () {
       });
     });
 
-    it('should timeout when all resources are not available and timout option is specified', function (done) {
+    itConcurrent('should timeout when all resources are not available and timout option is specified', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -719,7 +719,7 @@ describe('api', function () {
       });
     });
 
-    it('should timeout when some resources are not available and timout option is specified', function (done) {
+    itConcurrent('should timeout when some resources are not available and timout option is specified', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -738,7 +738,7 @@ describe('api', function () {
       });
     });
 
-    it('should succeed when file resources are not available in reverse mode', function (done) {
+    itConcurrent('should succeed when file resources are not available in reverse mode', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -755,7 +755,7 @@ describe('api', function () {
       });
     });
 
-    it('should succeed when file resources are not available later in reverse mode', function (done) {
+    itConcurrent('should succeed when file resources are not available later in reverse mode', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -778,7 +778,7 @@ describe('api', function () {
       });
     });
 
-    it('should timeout when file resources are available in reverse mode', function (done) {
+    itConcurrent('should timeout when file resources are available in reverse mode', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
