@@ -10,16 +10,6 @@ const mkdirp = require('mkdirp');
 temp.track(); // cleanup files on exit
 
 describe('api', function () {
-  let httpServer = null;
-
-  afterEach(function (done) {
-    if (httpServer) {
-      httpServer.close();
-      httpServer = null;
-    }
-    done();
-  });
-
   it('should succeed when file resources are available', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -57,6 +47,8 @@ describe('api', function () {
   });
 
   it('should succeed when http resources are become available later', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['http://localhost:3000', 'http://localhost:3000/foo']
     };
@@ -70,11 +62,14 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeUndefined();
+      httpServer.close();
       done();
     });
   });
 
   it('should succeed when custom validateStatus fn is provided http resource returns 401', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['http://localhost:3000'],
       validateStatus: function (status) {
@@ -92,11 +87,14 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeUndefined();
+      httpServer.close();
       done();
     });
   });
 
   it('should succeed when http resource become available later via redirect', function (done) {
+    let httpServer;
+
     const opts = {
       // followRedirect: true // default is true
       resources: ['http://localhost:3000']
@@ -115,11 +113,14 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeUndefined();
+      httpServer.close();
       done();
     });
   });
 
   it('should succeed when http GET resources become available later', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['http-get://localhost:3011', 'http-get://localhost:3011/foo']
     };
@@ -133,11 +134,14 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeUndefined();
+      httpServer.close();
       done();
     });
   });
 
   it('should succeed when http GET resource become available later via redirect', function (done) {
+    let httpServer;
+
     const opts = {
       // followRedirect: true, // default is true
       resources: ['http-get://localhost:3000']
@@ -156,6 +160,7 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeUndefined();
+      httpServer.close();
       done();
     });
   });
@@ -189,6 +194,8 @@ describe('api', function () {
   */
 
   it('should succeed when a service is listening to tcp port', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['tcp:localhost:3001', 'tcp:3001']
     };
@@ -202,11 +209,13 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeUndefined();
+      httpServer.close();
       done();
     });
   });
 
   it('should succeed when a service is listening to a socket', function (done) {
+    let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -222,12 +231,14 @@ describe('api', function () {
 
       waitOn(opts, function (err) {
         expect(err).toBeUndefined();
+        httpServer.close();
         done();
       });
     });
   });
 
   it('should succeed when a http service is listening to a socket', function (done) {
+    let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -245,12 +256,14 @@ describe('api', function () {
 
       waitOn(opts, function (err) {
         expect(err).toBeUndefined();
+        httpServer.close();
         done();
       });
     });
   });
 
   it('should succeed when a http GET service is listening to a socket', function (done) {
+    let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -268,6 +281,7 @@ describe('api', function () {
 
       waitOn(opts, function (err) {
         expect(err).toBeUndefined();
+        httpServer.close();
         done();
       });
     });
@@ -305,6 +319,8 @@ describe('api', function () {
   });
 
   it('should timeout when an http resource returns 404', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['http://localhost:3002'],
       timeout: 1000,
@@ -322,6 +338,7 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeDefined();
+      httpServer.close();
       done();
     });
   });
@@ -349,7 +366,7 @@ describe('api', function () {
       httpTimeout: 70
     };
 
-    httpServer = http.createServer().on('request', function (req, res) {
+    const httpServer = http.createServer().on('request', function (req, res) {
       // make it a slow response, longer than the httpTimeout
       setTimeout(function () {
         res.end('data');
@@ -359,6 +376,7 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeDefined();
+      httpServer.close();
       done();
     });
   });
@@ -372,7 +390,7 @@ describe('api', function () {
       resources: ['http://localhost:3000']
     };
 
-    httpServer = http.createServer().on('request', function (req, res) {
+    const httpServer = http.createServer().on('request', function (req, res) {
       const pathname = req.url;
       if (pathname === '/') {
         res.writeHead(302, { Location: 'http://localhost:3000/foo' });
@@ -383,6 +401,7 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeDefined();
+      httpServer.close();
       done();
     });
   });
@@ -438,7 +457,7 @@ describe('api', function () {
       resources: ['http-get://localhost:3000']
     };
 
-    httpServer = http.createServer().on('request', function (req, res) {
+    const httpServer = http.createServer().on('request', function (req, res) {
       const pathname = req.url;
       if (pathname === '/') {
         res.writeHead(302, { Location: 'http://localhost:3000/foo' });
@@ -449,6 +468,7 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).toBeDefined();
+      httpServer.close();
       done();
     });
   });
@@ -498,6 +518,7 @@ describe('api', function () {
   });
 
   it('should timeout when an http service listening to a socket returns 404', function (done) {
+    let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -519,12 +540,14 @@ describe('api', function () {
 
       waitOn(opts, function (err) {
         expect(err).toBeDefined();
+        httpServer.close();
         done();
       });
     });
   });
 
   it('should timeout when an http service listening to a socket is too slow', function (done) {
+    let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -546,6 +569,7 @@ describe('api', function () {
 
       waitOn(opts, function (err) {
         expect(err).toBeDefined();
+        httpServer.close();
         done();
       });
     });

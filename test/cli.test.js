@@ -19,16 +19,6 @@ function execCLI(args, options) {
 const FAST_OPTS = '-t 1000 -i 100 -w 100'.split(' ');
 
 describe('cli', function () {
-  let httpServer = null;
-
-  afterEach(function (done) {
-    if (httpServer) {
-      httpServer.close();
-      httpServer = null;
-    }
-    done();
-  });
-
   it('should succeed when file resources are available', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -67,6 +57,8 @@ describe('cli', function () {
   });
 
   it('should succeed when http resources become available later', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['http://localhost:8123', 'http://localhost:8123/foo']
     };
@@ -80,11 +72,14 @@ describe('cli', function () {
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
       expect(code).toBe(0);
+      httpServer.close();
       done();
     });
   });
 
   it('should succeed when http resources become available later via redirect', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['http://localhost:8123']
     };
@@ -102,11 +97,14 @@ describe('cli', function () {
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
       expect(code).toBe(0);
+      httpServer.close();
       done();
     });
   });
 
   it('should succeed when http GET resources become available later', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['http-get://localhost:8124', 'http-get://localhost:8124/foo']
     };
@@ -120,11 +118,14 @@ describe('cli', function () {
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
       expect(code).toBe(0);
+      httpServer.close();
       done();
     });
   });
 
   it('should succeed when http GET resources become available later via redirect', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['http-get://localhost:8124']
     };
@@ -142,6 +143,7 @@ describe('cli', function () {
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
       expect(code).toBe(0);
+      httpServer.close();
       done();
     });
   });
@@ -163,6 +165,8 @@ describe('cli', function () {
   */
 
   it('should succeed when a service is listening to tcp port', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['tcp:localhost:3030', 'tcp:3030']
     };
@@ -176,11 +180,13 @@ describe('cli', function () {
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
       expect(code).toBe(0);
+      httpServer.close();
       done();
     });
   });
 
   it('should succeed when a service is listening to a socket', function (done) {
+    let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -196,12 +202,14 @@ describe('cli', function () {
 
       execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
         expect(code).toBe(0);
+        httpServer.close();
         done();
       });
     });
   });
 
   it('should succeed when a http service is listening to a socket', function (done) {
+    let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -219,12 +227,14 @@ describe('cli', function () {
 
       execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
         expect(code).toBe(0);
+        httpServer.close();
         done();
       });
     });
   });
 
   it('should succeed when a http GET service is listening to a socket', function (done) {
+    let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -242,6 +252,7 @@ describe('cli', function () {
 
       execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
         expect(code).toBe(0);
+        httpServer.close();
         done();
       });
     });
@@ -281,6 +292,8 @@ describe('cli', function () {
   });
 
   it('should timeout when an http resource returns 404', function (done) {
+    let httpServer;
+
     const opts = {
       resources: ['http://localhost:3998'],
       timeout: 1000,
@@ -298,6 +311,7 @@ describe('cli', function () {
     // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
       expect(code).not.toBe(0);
+      httpServer.close();
       done();
     });
   });
@@ -326,7 +340,7 @@ describe('cli', function () {
       httpTimeout: 70
     };
 
-    httpServer = http.createServer().on('request', function (req, res) {
+    const httpServer = http.createServer().on('request', function (req, res) {
       // make it a slow response, longer than the httpTimeout
       setTimeout(function () {
         res.end('data');
@@ -338,6 +352,7 @@ describe('cli', function () {
     // timeout, interval, and window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS).concat(addOpts), {}).on('exit', function (code) {
       expect(code).not.toBe(0);
+      httpServer.close();
       done();
     });
   });
@@ -436,6 +451,7 @@ describe('cli', function () {
   });
 
   it('should timeout when an http service listening to a socket returns 404', function (done) {
+    let httpServer;
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -458,6 +474,7 @@ describe('cli', function () {
       // timeout, interval, window are in FAST_OPTS
       execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
         expect(code).not.toBe(0);
+        httpServer.close();
         done();
       });
     });
@@ -529,6 +546,8 @@ describe('cli', function () {
 
   describe('resources are specified in config', () => {
     it('should succeed when http resources become available later', function (done) {
+      let httpServer;
+
       setTimeout(function () {
         httpServer = http.createServer().on('request', function (req, res) {
           res.end('data');
@@ -540,12 +559,15 @@ describe('cli', function () {
         'exit',
         function (code) {
           expect(code).toBe(0);
+          httpServer.close();
           done();
         }
       );
     });
 
     it('should succeed when http resources from command line become available later (ignores config resources)', function (done) {
+      let httpServer;
+
       setTimeout(function () {
         httpServer = http.createServer().on('request', function (req, res) {
           res.end('data');
@@ -558,6 +580,7 @@ describe('cli', function () {
         {}
       ).on('exit', function (code) {
         expect(code).toBe(0);
+        httpServer.close();
         done();
       });
     });
