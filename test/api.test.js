@@ -7,6 +7,8 @@ const path = require('path');
 const temp = require('temp');
 const mkdirp = require('mkdirp');
 
+const { getPort } = require('./helpers');
+
 temp.track(); // cleanup files on exit
 
 describe('api', function () {
@@ -47,17 +49,18 @@ describe('api', function () {
   });
 
   it('should succeed when http resources are become available later', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['http://localhost:3000', 'http://localhost:3000/foo']
+      resources: [`http://localhost:${port}`, `http://localhost:${port}/foo`]
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         res.end('data');
       });
-      httpServer.listen(3000, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     waitOn(opts, function (err) {
@@ -68,10 +71,11 @@ describe('api', function () {
   });
 
   it('should succeed when custom validateStatus fn is provided http resource returns 401', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['http://localhost:3000'],
+      resources: [`http://localhost:${port}`],
       validateStatus: function (status) {
         return status === 401 || (status >= 200 && status < 300);
       }
@@ -82,7 +86,7 @@ describe('api', function () {
         res.statusCode = 401;
         res.end('Not authorized');
       });
-      httpServer.listen(3000, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     waitOn(opts, function (err) {
@@ -93,22 +97,23 @@ describe('api', function () {
   });
 
   it('should succeed when http resource become available later via redirect', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
       // followRedirect: true // default is true
-      resources: ['http://localhost:3000']
+      resources: [`http://localhost:${port}`]
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         const pathname = req.url;
         if (pathname === '/') {
-          res.writeHead(302, { Location: 'http://localhost:3000/foo' });
+          res.writeHead(302, { Location: `http://localhost:${port}/foo` });
         }
         res.end('data');
       });
-      httpServer.listen(3000, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     waitOn(opts, function (err) {
@@ -119,17 +124,18 @@ describe('api', function () {
   });
 
   it('should succeed when http GET resources become available later', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['http-get://localhost:3011', 'http-get://localhost:3011/foo']
+      resources: [`http-get://localhost:${port}`, `http-get://localhost:${port}/foo`]
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         res.end('data');
       });
-      httpServer.listen(3011, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     waitOn(opts, function (err) {
@@ -140,22 +146,23 @@ describe('api', function () {
   });
 
   it('should succeed when http GET resource become available later via redirect', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
       // followRedirect: true, // default is true
-      resources: ['http-get://localhost:3000']
+      resources: [`http-get://localhost:${port}`]
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         const pathname = req.url;
         if (pathname === '/') {
-          res.writeHead(302, { Location: 'http://localhost:3000/foo' });
+          res.writeHead(302, { Location: `http://localhost:${port}/foo` });
         }
         res.end('data');
       });
-      httpServer.listen(3000, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     waitOn(opts, function (err) {
@@ -194,17 +201,18 @@ describe('api', function () {
   */
 
   it('should succeed when a service is listening to tcp port', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['tcp:localhost:3001', 'tcp:3001']
+      resources: [`tcp:localhost:${port}`, `tcp:${port}`]
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         res.end('data');
       });
-      httpServer.listen(3001, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     waitOn(opts, function (err) {
@@ -319,10 +327,11 @@ describe('api', function () {
   });
 
   it('should timeout when an http resource returns 404', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['http://localhost:3002'],
+      resources: [`http://localhost:${port}`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -333,7 +342,7 @@ describe('api', function () {
         res.statusCode = 404;
         res.end('data');
       });
-      httpServer.listen(3002, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     waitOn(opts, function (err) {
@@ -344,8 +353,9 @@ describe('api', function () {
   });
 
   it('should timeout when an http resource is not available', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['http://localhost:3010'],
+      resources: [`http://localhost:${port}`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -358,8 +368,9 @@ describe('api', function () {
   });
 
   it('should timeout when an http resource does not respond before httpTimeout', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['http://localhost:8125'],
+      resources: [`http://localhost:${port}`],
       timeout: 1000,
       interval: 100,
       window: 100,
@@ -372,7 +383,7 @@ describe('api', function () {
         res.end('data');
       }, 90);
     });
-    httpServer.listen(8125, 'localhost');
+    httpServer.listen(port, 'localhost');
 
     waitOn(opts, function (err) {
       expect(err).toBeDefined();
@@ -382,22 +393,23 @@ describe('api', function () {
   });
 
   it('should timeout when followRedirect is false and http resource redirects', function (done) {
+    const port = getPort();
     const opts = {
       timeout: 1000,
       interval: 100,
       window: 100,
       followRedirect: false,
-      resources: ['http://localhost:3000']
+      resources: [`http://localhost:${port}`]
     };
 
     const httpServer = http.createServer().on('request', function (req, res) {
       const pathname = req.url;
       if (pathname === '/') {
-        res.writeHead(302, { Location: 'http://localhost:3000/foo' });
+        res.writeHead(302, { Location: `http://localhost:${port}/foo` });
       }
       res.end('data');
     });
-    httpServer.listen(3000, 'localhost');
+    httpServer.listen(port, 'localhost');
 
     waitOn(opts, function (err) {
       expect(err).toBeDefined();
@@ -407,8 +419,9 @@ describe('api', function () {
   });
 
   it('should timeout when an http GET resource is not available', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['http-get://localhost:3010'],
+      resources: [`http-get://localhost:${port}`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -421,8 +434,9 @@ describe('api', function () {
   });
 
   it('should timeout when an https resource is not available', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['https://localhost:3010/foo/bar'],
+      resources: [`https://localhost:${port}/foo/bar`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -435,8 +449,9 @@ describe('api', function () {
   });
 
   it('should timeout when an https GET resource is not available', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['https-get://localhost:3010/foo/bar'],
+      resources: [`https-get://localhost:${port}/foo/bar`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -449,22 +464,23 @@ describe('api', function () {
   });
 
   it('should timeout when followRedirect is false and http GET resource redirects', function (done) {
+    const port = getPort();
     const opts = {
       timeout: 1000,
       interval: 100,
       window: 100,
       followRedirect: false,
-      resources: ['http-get://localhost:3000']
+      resources: [`http-get://localhost:${port}`]
     };
 
     const httpServer = http.createServer().on('request', function (req, res) {
       const pathname = req.url;
       if (pathname === '/') {
-        res.writeHead(302, { Location: 'http://localhost:3000/foo' });
+        res.writeHead(302, { Location: `http://localhost:${port}/foo` });
       }
       res.end('data');
     });
-    httpServer.listen(3000, 'localhost');
+    httpServer.listen(port, 'localhost');
 
     waitOn(opts, function (err) {
       expect(err).toBeDefined();
@@ -474,8 +490,9 @@ describe('api', function () {
   });
 
   it('should timeout when a service is not listening to tcp port', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['tcp:localhost:3010'],
+      resources: [`tcp:localhost:${port}`],
       timeout: 1000
     };
 

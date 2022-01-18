@@ -7,6 +7,8 @@ const path = require('path');
 const temp = require('temp');
 const mkdirp = require('mkdirp');
 
+const { getPort } = require('./helpers');
+
 const CLI_PATH = path.resolve(__dirname, '../bin/wait-on');
 
 temp.track(); // cleanup files on exit
@@ -57,17 +59,18 @@ describe('cli', function () {
   });
 
   it('should succeed when http resources become available later', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['http://localhost:8123', 'http://localhost:8123/foo']
+      resources: [`http://localhost:${port}`, `http://localhost:${port}/foo`]
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         res.end('data');
       });
-      httpServer.listen(8123, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
@@ -78,21 +81,22 @@ describe('cli', function () {
   });
 
   it('should succeed when http resources become available later via redirect', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['http://localhost:8123']
+      resources: [`http://localhost:${port}`]
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         const pathname = req.url;
         if (pathname === '/') {
-          res.writeHead(302, { Location: 'http://localhost:8123/foo' });
+          res.writeHead(302, { Location: `http://localhost:${port}/foo` });
         }
         res.end('data');
       });
-      httpServer.listen(8123, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
@@ -103,17 +107,18 @@ describe('cli', function () {
   });
 
   it('should succeed when http GET resources become available later', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['http-get://localhost:8124', 'http-get://localhost:8124/foo']
+      resources: [`http-get://localhost:${port}`, `http-get://localhost:${port}/foo`],
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         res.end('data');
       });
-      httpServer.listen(8124, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
@@ -124,21 +129,22 @@ describe('cli', function () {
   });
 
   it('should succeed when http GET resources become available later via redirect', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['http-get://localhost:8124']
+      resources: [`http-get://localhost:${port}`],
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         const pathname = req.url;
         if (pathname === '/') {
-          res.writeHead(302, { Location: 'http://localhost:8124/foo' });
+          res.writeHead(302, { Location: `http://localhost:${port}/foo` });
         }
         res.end('data');
       });
-      httpServer.listen(8124, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
@@ -165,17 +171,18 @@ describe('cli', function () {
   */
 
   it('should succeed when a service is listening to tcp port', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['tcp:localhost:3030', 'tcp:3030']
+      resources: [`tcp:localhost:${port}`, `tcp:${port}`]
     };
 
     setTimeout(function () {
       httpServer = http.createServer().on('request', function (req, res) {
         res.end('data');
       });
-      httpServer.listen(3030, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
 
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
@@ -292,10 +299,11 @@ describe('cli', function () {
   });
 
   it('should timeout when an http resource returns 404', function (done) {
+    const port = getPort();
     let httpServer;
 
     const opts = {
-      resources: ['http://localhost:3998'],
+      resources: [`http://localhost:${port}`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -306,7 +314,7 @@ describe('cli', function () {
         res.statusCode = 404;
         res.end('data');
       });
-      httpServer.listen(3998, 'localhost');
+      httpServer.listen(port, 'localhost');
     }, 300);
     // timeout, interval, window are in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
@@ -317,8 +325,9 @@ describe('cli', function () {
   });
 
   it('should timeout when an http resource is not available', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['http://localhost:3999'],
+      resources: [`http://localhost:${port}`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -332,8 +341,9 @@ describe('cli', function () {
   });
 
   it('should timeout when an http resource does not respond before httpTimeout', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['http://localhost:8125'],
+      resources: [`http://localhost:${port}`],
       timeout: 1000,
       interval: 100,
       window: 100,
@@ -346,7 +356,7 @@ describe('cli', function () {
         res.end('data');
       }, 90);
     });
-    httpServer.listen(8125, 'localhost');
+    httpServer.listen(port, 'localhost');
 
     const addOpts = '--httpTimeout 70'.split(' ');
     // timeout, interval, and window are in FAST_OPTS
@@ -358,8 +368,9 @@ describe('cli', function () {
   });
 
   it('should timeout when an http GET resource is not available', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['http-get://localhost:3999'],
+      resources: [`http-get://localhost:${port}`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -373,8 +384,9 @@ describe('cli', function () {
   });
 
   it('should timeout when an https resource is not available', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['https://localhost:3010/foo/bar'],
+      resources: [`https://localhost:${port}/foo/bar`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -388,8 +400,9 @@ describe('cli', function () {
   });
 
   it('should timeout when an https GET resource is not available', function (done) {
+    const port = getPort();
     const opts = {
-      resources: ['https-get://localhost:3010/foo/bar'],
+      resources: [`https-get://localhost:${port}/foo/bar`],
       timeout: 1000,
       interval: 100,
       window: 100
@@ -566,17 +579,18 @@ describe('cli', function () {
     });
 
     it('should succeed when http resources from command line become available later (ignores config resources)', function (done) {
+      const port = getPort();
       let httpServer;
 
       setTimeout(function () {
         httpServer = http.createServer().on('request', function (req, res) {
           res.end('data');
         });
-        httpServer.listen(3030, 'localhost');
+        httpServer.listen(port, 'localhost');
       }, 300);
 
       execCLI(
-        ['--config', path.join(__dirname, 'config-http-resources.js'), 'http://localhost:3030/'].concat(FAST_OPTS),
+        ['--config', path.join(__dirname, 'config-http-resources.js'), `http://localhost:${port}/`].concat(FAST_OPTS),
         {}
       ).on('exit', function (code) {
         expect(code).toBe(0);
