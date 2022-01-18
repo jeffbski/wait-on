@@ -3,7 +3,7 @@ module.exports = {
     mocha: true,
   },
   plugins: ['chai-friendly'],
-  extends: ['standard', 'prettier', 'prettier/standard'],
+  extends: ['standard', 'prettier'],
   root: true,
   rules: {
     'no-use-before-define': 'off',
