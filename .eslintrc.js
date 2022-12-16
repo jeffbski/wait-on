@@ -1,20 +1,20 @@
 module.exports = {
   env: {
-    mocha: true,
+    mocha: true
   },
   plugins: ['chai-friendly'],
-  extends: ['standard', 'prettier', 'prettier/standard'],
+  extends: ['standard', 'prettier'],
   root: true,
   rules: {
     'no-use-before-define': 'off',
     'no-unused-vars': [
       'error',
       {
-        varsIgnorePattern: 'should|expect',
-      },
+        varsIgnorePattern: 'should|expect'
+      }
     ],
     // disable the original no-unused-expressions use chai-friendly
     'no-unused-expressions': 'off',
-    'chai-friendly/no-unused-expressions': 'error',
-  },
+    'chai-friendly/no-unused-expressions': 'error'
+  }
 };
