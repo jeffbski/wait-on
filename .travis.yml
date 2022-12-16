@@ -1,7 +1,7 @@
+dist: jammy
 language: node_js
 node_js:
-  - '10'
-  - '11'
   - '12'
   - '14'
-  - node
+  - '16'
+  - '18'
