@@ -6,7 +6,7 @@ const path = require('path');
 const waitOn = require('../');
 
 const minimistOpts = {
-  string: ['c', 'd', 'i', 's', 't', 'w', 'httpTimeout', 'tcpTimeout'],
+  string: ['c', 'd', 'i', 's', 't', 'w', 'httpTimeout','httpContains', 'tcpTimeout'],
   boolean: ['h', 'l', 'r', 'v'],
   alias: {
     c: 'config',
@@ -45,6 +45,7 @@ if (argv.help || !hasResources) {
   const opts = [
     'delay',
     'httpTimeout',
+    'httpContains',
     'interval',
     'log',
     'reverse',

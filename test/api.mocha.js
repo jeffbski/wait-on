@@ -144,6 +144,26 @@ describe('api', function () {
     });
   });
 
+  it('should succeed when http GET contains httpContains value', function (done) {
+    const opts = {
+      resources: ['http-get://localhost:3000'],
+      httpContains: "abc123"
+    };
+
+    setTimeout(function () {
+      httpServer = http.createServer().on('request', function (req, res) {
+        res.write("abc123");
+        res.end('data');
+      });
+      httpServer.listen(3000, 'localhost');
+    }, 300);
+
+    waitOn(opts, function (err) {
+      expect(err).toNotExist();
+      done();
+    });
+  });
+
   it('should succeed when http GET resource become available later via redirect', function (done) {
     const opts = {
       // followRedirect: true, // default is true
@@ -449,6 +469,31 @@ describe('api', function () {
       const pathname = req.url;
       if (pathname === '/') {
         res.writeHead(302, { Location: 'http://localhost:3000/foo' });
+      }
+      res.end('data');
+    });
+    httpServer.listen(3000, 'localhost');
+
+    waitOn(opts, function (err) {
+      expect(err).toExist();
+      done();
+    });
+  });
+
+  it('should timeout when http response does not contain requested string', function (done) {
+    const opts = {
+      timeout: 1000,
+      interval: 100,
+      window: 100,
+      followRedirect: false,
+      httpContains: "12345",
+      resources: ['http-get://localhost:3000']
+    };
+
+    httpServer = http.createServer().on('request', function (req, res) {
+      const pathname = req.url;
+      if (pathname === '/') {
+        res.write("abc123")
       }
       res.end('data');
     });
