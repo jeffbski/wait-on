@@ -5,8 +5,9 @@ const minimist = require('minimist');
 const path = require('path');
 const waitOn = require('../');
 
+const interval = ['timeout', 'httpTimeout', 'tcpTimeout'];
 const minimistOpts = {
-  string: ['c', 'd', 'i', 's', 't', 'w', 'httpTimeout', 'tcpTimeout'],
+  string: ['c', 'd', 'i', 's', 't', 'w'].concat(interval),
   boolean: ['h', 'l', 'r', 'v'],
   alias: {
     c: 'config',
@@ -55,7 +56,11 @@ if (argv.help || !hasResources) {
     'window'
   ].reduce(function (accum, x) {
     if (argv[x]) {
-      accum[x] = argv[x];
+      let value = argv[x];
+      if (interval.includes(x)) {
+        value = parseInterval(value);
+      }
+      accum[x] = value;
     }
     return accum;
   }, configOpts);
@@ -78,4 +83,19 @@ function errorExit(err) {
     console.error(String(err));
   }
   process.exit(1);
+}
+
+function parseInterval(arg) {
+  const res = /^([\d.]+)(|ms|s|m|h)$/i.exec(arg);
+  if (!res) {
+    return arg;
+  }
+  const value = parseFloat(res[1]);
+  switch (res[2]) {
+    case '':
+    case 'ms': return Math.floor(value);
+    case 's': return Math.floor(value * 1000);
+    case 'm': return Math.floor(value * 1000 * 60);
+    case 'h': return Math.floor(value * 1000 * 60 * 60);
+  }
 }

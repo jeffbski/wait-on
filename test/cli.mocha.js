@@ -22,7 +22,10 @@ function execCLI(args, options) {
   return childProcess.spawn(process.execPath, fullArgs, options);
 }
 
-const FAST_OPTS = '-t 1000 -i 100 -w 100'.split(' ');
+
+const FAST_OPTS = '-t 1000 -i 100 -w 100'.split(' '); 
+const FAST_OPTS_TIMEOUT_UNIT = '-t 1s -i 100 -w 100'.split(' ');
+
 
 describe('cli', function () {
   this.timeout(3000);
@@ -271,6 +274,22 @@ describe('cli', function () {
     });
   });
 
+  it('should timeout when all resources are not available and timout option is specified with unit', function (done) {
+    temp.mkdir({}, function (err, dirPath) {
+      if (err) return done(err);
+      const opts = {
+        resources: [path.resolve(dirPath, 'foo')],
+        timeout: '1s'
+      };
+      // timeout is in FAST_OPTS
+      execCLI(opts.resources.concat(FAST_OPTS_TIMEOUT_UNIT), {}).on('exit', function (code) {
+        expect(code).toNotBe(0);
+        done();
+      });
+    });
+  });
+
+
   it('should timeout when some resources are not available and timout option is specified', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -349,6 +368,31 @@ describe('cli', function () {
     });
   });
 
+  it('should timeout when an http resource does not respond before httpTimeout specified with unit', function (done) {
+    const opts = {
+      resources: ['http://localhost:8125'],
+      timeout: 1000,
+      interval: 100,
+      window: 100,
+      httpTimeout: '70ms'
+    };
+
+    httpServer = http.createServer().on('request', function (req, res) {
+      // make it a slow response, longer than the httpTimeout
+      setTimeout(function () {
+        res.end('data');
+      }, 90);
+    });
+    httpServer.listen(8125, 'localhost');
+
+    const addOpts = '--httpTimeout 70ms'.split(' ');
+    // timeout, interval, and window are in FAST_OPTS
+    execCLI(opts.resources.concat(FAST_OPTS).concat(addOpts), {}).on('exit', function (code) {
+      expect(code).toNotBe(0);
+      done();
+    });
+  });
+
   it('should timeout when an http GET resource is not available', function (done) {
     const opts = {
       resources: ['http-get://localhost:3999'],
@@ -415,6 +459,21 @@ describe('cli', function () {
     };
 
     const addOpts = '--tcpTimeout 1000'.split(' ');
+    // timeout is in FAST_OPTS
+    execCLI(opts.resources.concat(FAST_OPTS).concat(addOpts), {}).on('exit', function (code) {
+      expect(code).toNotBe(0);
+      done();
+    });
+  });
+
+  it('should timeout when a service host is unreachable, tcpTimeout specified with unit', function (done) {
+    const opts = {
+      resources: ['tcp:256.0.0.1:1234'],
+      timeout: 1000,
+      tcpTimeout: '1s'
+    };
+
+    const addOpts = '--tcpTimeout 1s'.split(' ');
     // timeout is in FAST_OPTS
     execCLI(opts.resources.concat(FAST_OPTS).concat(addOpts), {}).on('exit', function (code) {
       expect(code).toNotBe(0);
