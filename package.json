@@ -38,7 +38,7 @@
     "temp": "^0.9.4"
   },
   "dependencies": {
-    "axios": "^0.27.2",
+    "axios": "^1.6.1",
     "joi": "^17.11.0",
     "lodash": "^4.17.21",
     "minimist": "^1.2.8",
