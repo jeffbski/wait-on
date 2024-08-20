@@ -240,7 +240,7 @@ describe('api', function () {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
-        resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo']
+        resources: ['http://unix:' + socketPath + ':http://localhost/', 'http://unix:' + socketPath + ':http://localhost/foo']
       };
 
       setTimeout(function () {
@@ -263,7 +263,7 @@ describe('api', function () {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
-        resources: ['http-get://unix:' + socketPath + ':/', 'http-get://unix:' + socketPath + ':/foo']
+        resources: ['http-get://unix:' + socketPath + ':http://localhost/', 'http-get://unix:' + socketPath + ':http://localhost/foo']
       };
 
       setTimeout(function () {

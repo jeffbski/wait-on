@@ -25,21 +25,21 @@
   },
   "devDependencies": {
     "eslint": "^8.52.0",
-    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-chai-friendly": "^0.7.2",
-    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-n": "^16.2.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.1.1",
     "expect-legacy": "^1.20.2",
     "mkdirp": "^1.0.4",
-    "mocha": "^10.2.0",
+    "mocha": "^10.7.3",
     "temp": "^0.9.4"
   },
   "dependencies": {
-    "axios": "^1.6.1",
-    "joi": "^17.11.0",
+    "axios": "^1.7.4",
+    "joi": "^17.13.3",
     "lodash": "^4.17.21",
     "minimist": "^1.2.8",
     "rxjs": "^7.8.1"
