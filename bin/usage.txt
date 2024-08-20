@@ -28,8 +28,8 @@ Description:
        tcp:       - TCP port is listening. ex: tcp:1.2.3.4:9000 or tcp:foo.com:700
        socket:    - Domain Socket is listening. ex: socket:/path/to/sock
                     For http over socket, use http://unix:SOCK_PATH:URL_PATH
-                    like http://unix:/path/to/sock:/foo/bar or
-                         http-get://unix:/path/to/sock:/foo/bar
+                    like http://unix:/path/to/sock:http://server/foo/bar or
+                         http-get://unix:/path/to/sock:http://server/foo/bar
 
 Standard Options:
 

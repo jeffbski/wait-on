@@ -45,8 +45,8 @@ wait-on http-get://localhost:8000/foo && NEXT_CMD # wait for http 2XX GET
 wait-on https-get://myserver/foo && NEXT_CMD # wait for https 2XX GET
 wait-on tcp:4000 && NEXT_CMD # wait for service to listen on a TCP port
 wait-on socket:/path/mysock # wait for service to listen on domain socket
-wait-on http://unix:/var/SOCKPATH:/a/foo # wait for http HEAD on domain socket
-wait-on http-get://unix:/var/SOCKPATH:/a/foo # wait for http GET on domain socket
+wait-on http://unix:/var/SOCKPATH:http://server/a/foo # wait for http HEAD on domain socket
+wait-on http-get://unix:/var/SOCKPATH:http://server/a/foo # wait for http GET on domain socket
 ```
 
 ```
@@ -81,8 +81,8 @@ Description:
        tcp:       - TCP port is listening. ex: 1.2.3.4:9000 or foo.com:700
        socket:    - Domain Socket is listening. ex: socket:/path/to/sock
                     For http over socket, use http://unix:SOCK_PATH:URL_PATH
-                    like http://unix:/path/to/sock:/foo/bar or
-                         http-get://unix:/path/to/sock:/foo/bar
+                    like http://unix:/path/to/sock:http://server/foo/bar or
+                         http-get://unix:/path/to/sock:http://server/foo/bar
 
 Standard Options:
 
@@ -163,8 +163,8 @@ var opts = {
     'https-get://my.com/cat',
     'tcp:foo.com:8000',
     'socket:/my/sock',
-    'http://unix:/my/sock:/my/url',
-    'http-get://unix:/my/sock:/my/url'
+    'http://unix:/my/sock:http://server/my/url',
+    'http-get://unix:/my/sock:http://server/my/url'
   ],
   delay: 1000, // initial delay in ms, default 0
   interval: 100, // poll interval in ms, default 250ms
