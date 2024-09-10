@@ -8,7 +8,7 @@ For http(s) resources wait-on will check that the requests are returning 2XX (su
 
 wait-on can also be used in reverse mode which waits for resources to NOT be available. This is useful in waiting for services to shutdown before continuing. (Thanks @skarbovskiy for adding this feature)
 
-[![CI](https://github.com/jeffbski/wait-on/actions/workflows/ci.yml/badge.svg)](https://github.com/jeffbski/wait-on/actions/workflows/ci.yml)
+[![CI](https://github.com/jeffbski/wait-on/actions/workflows/node.js.yml/badge.svg)](https://github.com/jeffbski/wait-on/actions/workflows/node.js.yml)
 
 ## Installation
 
