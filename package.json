@@ -29,7 +29,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-chai-friendly": "^0.7.2",
-    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-import": "^2.30.0",
     "eslint-plugin-n": "^16.2.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.1.1",
@@ -39,7 +39,7 @@
     "temp": "^0.9.4"
   },
   "dependencies": {
-    "axios": "^1.7.4",
+    "axios": "^1.7.7",
     "joi": "^17.13.3",
     "lodash": "^4.17.21",
     "minimist": "^1.2.8",
