@@ -8,7 +8,7 @@ For http(s) resources wait-on will check that the requests are returning 2XX (su
 
 wait-on can also be used in reverse mode which waits for resources to NOT be available. This is useful in waiting for services to shutdown before continuing. (Thanks @skarbovskiy for adding this feature)
 
-[![Build Status](https://travis-ci.com/jeffbski/wait-on.svg?branch=master)](https://travis-ci.com/jeffbski/wait-on)
+[![CI](https://github.com/jeffbski/wait-on/actions/workflows/ci.yml/badge.svg)](https://github.com/jeffbski/wait-on/actions/workflows/ci.yml)
 
 ## Installation
 
