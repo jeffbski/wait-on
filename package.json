@@ -23,7 +23,7 @@
     "test:mocha": "mocha --exit 'test/**/*.mocha.js'"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=20.0.0"
   },
   "devDependencies": {
     "eslint": "^9.35.0",
