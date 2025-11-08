@@ -11,7 +11,8 @@ const mocha = require('mocha');
 const describe = mocha.describe;
 const it = mocha.it;
 const afterEach = mocha.afterEach;
-const expect = require('expect-legacy');
+const chai = require('chai');
+const expect = chai.expect;
 
 temp.track(); // cleanup files on exit
 
@@ -37,7 +38,7 @@ describe('api', function () {
       mkdirp.sync(path.dirname(opts.resources[1]));
       fs.writeFileSync(opts.resources[1], 'data2');
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -57,7 +58,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -76,7 +77,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -98,7 +99,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -121,7 +122,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -139,7 +140,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -162,7 +163,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -176,7 +177,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -189,7 +190,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -208,7 +209,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -228,7 +229,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -251,7 +252,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -274,7 +275,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -290,7 +291,7 @@ describe('api', function () {
         timeout: 1000
       };
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -305,7 +306,7 @@ describe('api', function () {
       };
       fs.writeFile(opts.resources[0], 'data', function () {});
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -328,7 +329,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -342,7 +343,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -365,7 +366,7 @@ describe('api', function () {
     httpServer.listen(8125, 'localhost');
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -389,7 +390,7 @@ describe('api', function () {
     httpServer.listen(3000, 'localhost');
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -403,7 +404,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -417,7 +418,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -431,7 +432,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -455,7 +456,7 @@ describe('api', function () {
     httpServer.listen(3000, 'localhost');
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -467,7 +468,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -485,7 +486,7 @@ describe('api', function () {
       };
 
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -499,7 +500,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -525,7 +526,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -552,7 +553,7 @@ describe('api', function () {
       httpServer.listen(socketPath);
 
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -570,7 +571,7 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       if (err) return done(err);
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -583,7 +584,7 @@ describe('api', function () {
         reverse: true
       };
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -603,7 +604,7 @@ describe('api', function () {
         fs.unlinkSync(opts.resources[1]);
       }, 300);
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -620,7 +621,7 @@ describe('api', function () {
       fs.writeFileSync(opts.resources[0], 'data1');
       fs.writeFileSync(opts.resources[1], 'data2');
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -679,7 +680,7 @@ describe('api', function () {
             done(new Error('Should not be resolved'));
           })
           .catch(function (err) {
-            expect(err).toExist();
+            expect(err).to.be.ok;
             done();
           });
       });
@@ -698,7 +699,7 @@ describe('api', function () {
             done(new Error('Should not be resolved'));
           })
           .catch(function (err) {
-            expect(err).toExist();
+            expect(err).to.be.ok;
             done();
           });
       });
@@ -759,7 +760,7 @@ describe('api', function () {
             done(new Error('Should not be resolved'));
           })
           .catch(function (err) {
-            expect(err).toExist();
+            expect(err).to.be.ok;
             done();
           });
       });
