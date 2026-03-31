@@ -181,9 +181,7 @@ var opts = {
     /* strings or binaries */
   ],
   passphrase: 'yourpassphrase',
-  proxy: false /* OR proxy config as defined in axios.
-  If not set axios detects proxy from env vars http_proxy and https_proxy
-  https://github.com/axios/axios#config-defaults
+  proxy: false /* OR proxy config object:
   {
     host: '127.0.0.1',
     port: 9000,
@@ -251,7 +249,7 @@ waitOn(opts, [cb]) - function which triggers resource checks
   - opts.cert: [ /* strings or binaries */ ],
   - opts.key: [ /* strings or binaries */ ],
   - opts.passphrase: 'yourpassphrase',
-  - opts.proxy: undefined, false, or object as defined in axios. Default is undefined. If not set axios detects proxy from env vars http_proxy and https_proxy. https://github.com/axios/axios#config-defaults
+  - opts.proxy: undefined, false, or object with host/port/auth. Default is undefined (no proxy).
 
 ```js
   // example proxy object
