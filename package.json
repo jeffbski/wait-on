@@ -34,11 +34,11 @@
     "temp": "^0.9.4"
   },
   "dependencies": {
-    "axios": "^1.13.5",
     "joi": "^18.0.2",
     "lodash": "^4.17.23",
     "minimist": "^1.2.8",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "undici": "^7.0.0"
   },
   "keywords": [
     "wait",
