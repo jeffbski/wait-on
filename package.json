@@ -4,6 +4,7 @@
   "version": "9.0.4",
   "type": "commonjs",
   "main": "lib/wait-on",
+  "types": "index.d.ts",
   "bin": {
     "wait-on": "bin/wait-on"
   },
@@ -26,12 +27,14 @@
     "node": ">=20.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "chai": "^6.2.2",
     "eslint": "^9.39.1",
     "eslint-plugin-chai-friendly": "^1.2.0",
     "mkdirp": "^3.0.1",
     "mocha": "^11.7.5",
-    "temp": "^0.9.4"
+    "temp": "^0.9.4",
+    "typescript": "^6.0.2"
   },
   "dependencies": {
     "axios": "^1.15.0",
