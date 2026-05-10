@@ -1,0 +1,6 @@
+{
+  "all": true,
+  "include": ["lib/**/*.js", "bin/wait-on"],
+  "exclude": ["test/**/*.js"],
+  "reporter": ["text", "html"]
+}
