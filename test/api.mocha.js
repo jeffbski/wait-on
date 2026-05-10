@@ -241,7 +241,10 @@ describe('api', function () {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
-        resources: ['http://unix:' + socketPath + ':http://localhost/', 'http://unix:' + socketPath + ':http://localhost/foo']
+        resources: [
+          'http://unix:' + socketPath + ':http://localhost/',
+          'http://unix:' + socketPath + ':http://localhost/foo'
+        ]
       };
 
       setTimeout(function () {
@@ -264,7 +267,10 @@ describe('api', function () {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
-        resources: ['http-get://unix:' + socketPath + ':http://localhost/', 'http-get://unix:' + socketPath + ':http://localhost/foo']
+        resources: [
+          'http-get://unix:' + socketPath + ':http://localhost/',
+          'http-get://unix:' + socketPath + ':http://localhost/foo'
+        ]
       };
 
       setTimeout(function () {
@@ -501,6 +507,33 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       expect(err).to.be.ok;
+      done();
+    });
+  });
+
+  it('should trigger TCP timeout handler', function (done) {
+    const opts = {
+      resources: ['tcp:10.255.255.1:1234'], // Non-routable IP to force timeout
+      timeout: 2000,
+      tcpTimeout: 200
+    };
+
+    waitOn(opts, function (err) {
+      expect(err).to.be.ok;
+      done();
+    });
+  });
+
+  it('should log timeout error when log is enabled', function (done) {
+    const opts = {
+      resources: ['file:/non/existent/file/path'],
+      timeout: 500,
+      log: true
+    };
+
+    waitOn(opts, function (err) {
+      expect(err).to.be.ok;
+      expect(err.message).to.contain('Timed out waiting for');
       done();
     });
   });
