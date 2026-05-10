@@ -11,3 +11,5 @@ node_modules
 npm-debug.log
 build-lib
 .idea
+.DS_Store
+.fastembed_cache
