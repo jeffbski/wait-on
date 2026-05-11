@@ -1,2 +1,4 @@
 /src/
 test/
+.fastembed_cache
+.github
