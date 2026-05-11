@@ -4,3 +4,7 @@ test/
 .github
 .nyc_output
 coverage
+.editorconfig
+.nycrc.json
+.prettier.js
+eslint.config.mjs
