@@ -2,3 +2,5 @@
 test/
 .fastembed_cache
 .github
+.nyc_output
+coverage
