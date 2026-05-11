@@ -6,5 +6,5 @@ test/
 coverage
 .editorconfig
 .nycrc.json
-.prettier.js
+.prettierrc.js
 eslint.config.mjs
