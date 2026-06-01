@@ -4,16 +4,14 @@ const waitOn = require('../');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
-const temp = require('temp');
 const mocha = require('mocha');
+const { makeTempDir } = require('./helpers.js');
 
 const describe = mocha.describe;
 const it = mocha.it;
 const afterEach = mocha.afterEach;
 const chai = require('chai');
 const expect = chai.expect;
-
-temp.track(); // cleanup files on exit
 
 describe('api', function () {
   this.timeout(3000);
@@ -28,7 +26,7 @@ describe('api', function () {
   });
 
   it('should succeed when file resources are available', function (done) {
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')]
@@ -44,7 +42,7 @@ describe('api', function () {
   });
 
   it('should succeed when file resources are become available later', function (done) {
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')]
@@ -215,7 +213,7 @@ describe('api', function () {
 
   it('should succeed when a service is listening to a socket', function (done) {
     let socketPath;
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
@@ -236,7 +234,7 @@ describe('api', function () {
 
   it('should succeed when a http service is listening to a socket', function (done) {
     let socketPath;
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
@@ -262,7 +260,7 @@ describe('api', function () {
 
   it('should succeed when a http GET service is listening to a socket', function (done) {
     let socketPath;
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
@@ -289,7 +287,7 @@ describe('api', function () {
   // Error situations
 
   it('should timeout when all resources are not available and timout option is specified', function (done) {
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo')],
@@ -303,7 +301,7 @@ describe('api', function () {
   });
 
   it('should timeout when some resources are not available and timout option is specified', function (done) {
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
@@ -480,7 +478,7 @@ describe('api', function () {
 
   it('should timeout when a service is not listening to a socket', function (done) {
     let socketPath;
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
@@ -539,7 +537,7 @@ describe('api', function () {
 
   it('should timeout when an http service listening to a socket returns 404', function (done) {
     let socketPath;
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
@@ -566,7 +564,7 @@ describe('api', function () {
 
   it('should timeout when an http service listening to a socket is too slow', function (done) {
     let socketPath;
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
@@ -609,7 +607,7 @@ describe('api', function () {
   });
 
   it('should succeed when file resources are not available in reverse mode', function (done) {
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
@@ -623,7 +621,7 @@ describe('api', function () {
   });
 
   it('should succeed when file resources are not available later in reverse mode', function (done) {
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
@@ -643,7 +641,7 @@ describe('api', function () {
   });
 
   it('should timeout when file resources are available in reverse mode', function (done) {
-    temp.mkdir({}, function (err, dirPath) {
+    makeTempDir(function (err, dirPath) {
       if (err) return done(err);
       const opts = {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
@@ -661,7 +659,7 @@ describe('api', function () {
 
   describe('promise support', function () {
     it('should succeed when file resources are available', function (done) {
-      temp.mkdir({}, function (err, dirPath) {
+      makeTempDir(function (err, dirPath) {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')]
@@ -679,7 +677,7 @@ describe('api', function () {
     });
 
     it('should succeed when file resources are become available later', function (done) {
-      temp.mkdir({}, function (err, dirPath) {
+      makeTempDir(function (err, dirPath) {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')]
@@ -701,7 +699,7 @@ describe('api', function () {
     });
 
     it('should timeout when all resources are not available and timout option is specified', function (done) {
-      temp.mkdir({}, function (err, dirPath) {
+      makeTempDir(function (err, dirPath) {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo')],
@@ -719,7 +717,7 @@ describe('api', function () {
     });
 
     it('should timeout when some resources are not available and timout option is specified', function (done) {
-      temp.mkdir({}, function (err, dirPath) {
+      makeTempDir(function (err, dirPath) {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
@@ -738,7 +736,7 @@ describe('api', function () {
     });
 
     it('should succeed when file resources are not available in reverse mode', function (done) {
-      temp.mkdir({}, function (err, dirPath) {
+      makeTempDir(function (err, dirPath) {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
@@ -755,7 +753,7 @@ describe('api', function () {
     });
 
     it('should succeed when file resources are not available later in reverse mode', function (done) {
-      temp.mkdir({}, function (err, dirPath) {
+      makeTempDir(function (err, dirPath) {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
@@ -778,7 +776,7 @@ describe('api', function () {
     });
 
     it('should timeout when file resources are available in reverse mode', function (done) {
-      temp.mkdir({}, function (err, dirPath) {
+      makeTempDir(function (err, dirPath) {
         if (err) return done(err);
         const opts = {
           resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
