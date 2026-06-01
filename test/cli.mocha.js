@@ -5,9 +5,8 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 const temp = require('temp');
-const mkdirp = require('mkdirp');
-
 const mocha = require('mocha');
+
 const describe = mocha.describe;
 const it = mocha.it;
 const afterEach = mocha.afterEach;
@@ -47,7 +46,7 @@ describe('cli', function () {
         resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar/deeper/deep/yet')]
       };
       fs.writeFileSync(opts.resources[0], 'data1');
-      mkdirp.sync(path.dirname(opts.resources[1]));
+      fs.mkdirSync(path.dirname(opts.resources[1]), { recursive: true });
       fs.writeFileSync(opts.resources[1], 'data2');
 
       execCLI(opts.resources.concat(FAST_OPTS), {}).on('exit', function (code) {
@@ -66,7 +65,7 @@ describe('cli', function () {
 
       setTimeout(function () {
         fs.writeFile(opts.resources[0], 'data1', function () {});
-        mkdirp.sync(path.dirname(opts.resources[1]));
+        fs.mkdirSync(path.dirname(opts.resources[1]), { recursive: true });
         fs.writeFile(opts.resources[1], 'data2', function () {});
       }, 300);
 

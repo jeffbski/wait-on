@@ -30,7 +30,6 @@
     "chai": "^6.2.2",
     "eslint": "^9.39.4",
     "eslint-plugin-chai-friendly": "^1.2.0",
-    "mkdirp": "^3.0.1",
     "mocha": "^11.7.6",
     "nyc": "^18.0.0",
     "temp": "^0.9.4"
