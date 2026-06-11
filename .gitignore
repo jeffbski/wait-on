@@ -15,3 +15,11 @@ build-lib
 .fastembed_cache
 .nyc_output
 coverage
+
+# Agents
+.agents/
+.github/agents/
+.github/copilot*
+.claude/
+.windsurf/
+skills-lock.json
