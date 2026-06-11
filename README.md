@@ -12,11 +12,8 @@ wait-on can also be used in reverse mode which waits for resources to NOT be ava
 
 ## Installation
 
-Latest wait-on version 7+ requires Node.js 12+
-wait-on versions 4-6 requires Node.js 10+
+wait-on supports the Node.js versions that are active or in maintenance. See the list here: https://nodejs.org/en/about/releases/
 
-(Node.js v8 users can use wait-on@5.3.0, v4 users can still use wait-on@2.1.2, and older Node.js
-engines, use wait-on@1.5.4)
 
 ```bash
 npm install wait-on # local version

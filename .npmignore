@@ -1,2 +1,10 @@
 /src/
 test/
+.fastembed_cache
+.github
+.nyc_output
+coverage
+.editorconfig
+.nycrc.json
+.prettierrc.js
+eslint.config.mjs

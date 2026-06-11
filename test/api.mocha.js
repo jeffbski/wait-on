@@ -11,7 +11,8 @@ const mocha = require('mocha');
 const describe = mocha.describe;
 const it = mocha.it;
 const afterEach = mocha.afterEach;
-const expect = require('expect-legacy');
+const chai = require('chai');
+const expect = chai.expect;
 
 temp.track(); // cleanup files on exit
 
@@ -37,7 +38,7 @@ describe('api', function () {
       mkdirp.sync(path.dirname(opts.resources[1]));
       fs.writeFileSync(opts.resources[1], 'data2');
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -57,7 +58,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -76,7 +77,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -98,7 +99,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -121,7 +122,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -139,7 +140,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -162,7 +163,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -176,7 +177,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -189,7 +190,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -208,7 +209,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -228,7 +229,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -240,7 +241,10 @@ describe('api', function () {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
-        resources: ['http://unix:' + socketPath + ':http://localhost/', 'http://unix:' + socketPath + ':http://localhost/foo']
+        resources: [
+          'http://unix:' + socketPath + ':http://localhost/',
+          'http://unix:' + socketPath + ':http://localhost/foo'
+        ]
       };
 
       setTimeout(function () {
@@ -251,7 +255,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -263,7 +267,10 @@ describe('api', function () {
       if (err) return done(err);
       socketPath = path.resolve(dirPath, 'sock');
       const opts = {
-        resources: ['http-get://unix:' + socketPath + ':http://localhost/', 'http-get://unix:' + socketPath + ':http://localhost/foo']
+        resources: [
+          'http-get://unix:' + socketPath + ':http://localhost/',
+          'http-get://unix:' + socketPath + ':http://localhost/foo'
+        ]
       };
 
       setTimeout(function () {
@@ -274,7 +281,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -290,7 +297,7 @@ describe('api', function () {
         timeout: 1000
       };
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -305,7 +312,7 @@ describe('api', function () {
       };
       fs.writeFile(opts.resources[0], 'data', function () {});
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -328,7 +335,7 @@ describe('api', function () {
     }, 300);
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -342,7 +349,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -365,7 +372,7 @@ describe('api', function () {
     httpServer.listen(8125, 'localhost');
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -389,7 +396,7 @@ describe('api', function () {
     httpServer.listen(3000, 'localhost');
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -403,7 +410,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -417,7 +424,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -431,7 +438,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -455,7 +462,7 @@ describe('api', function () {
     httpServer.listen(3000, 'localhost');
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -467,7 +474,7 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
       done();
     });
   });
@@ -485,7 +492,7 @@ describe('api', function () {
       };
 
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -499,7 +506,34 @@ describe('api', function () {
     };
 
     waitOn(opts, function (err) {
-      expect(err).toExist();
+      expect(err).to.be.ok;
+      done();
+    });
+  });
+
+  it('should trigger TCP timeout handler', function (done) {
+    const opts = {
+      resources: ['tcp:10.255.255.1:1234'], // Non-routable IP to force timeout
+      timeout: 2000,
+      tcpTimeout: 200
+    };
+
+    waitOn(opts, function (err) {
+      expect(err).to.be.ok;
+      done();
+    });
+  });
+
+  it('should log timeout error when log is enabled', function (done) {
+    const opts = {
+      resources: ['file:/non/existent/file/path'],
+      timeout: 500,
+      log: true
+    };
+
+    waitOn(opts, function (err) {
+      expect(err).to.be.ok;
+      expect(err.message).to.contain('Timed out waiting for');
       done();
     });
   });
@@ -525,7 +559,7 @@ describe('api', function () {
       }, 300);
 
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -552,7 +586,7 @@ describe('api', function () {
       httpServer.listen(socketPath);
 
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -570,7 +604,7 @@ describe('api', function () {
 
     waitOn(opts, function (err) {
       if (err) return done(err);
-      expect(err).toNotExist();
+      expect(err).to.not.be.ok;
       done();
     });
   });
@@ -583,7 +617,7 @@ describe('api', function () {
         reverse: true
       };
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -603,7 +637,7 @@ describe('api', function () {
         fs.unlinkSync(opts.resources[1]);
       }, 300);
       waitOn(opts, function (err) {
-        expect(err).toNotExist();
+        expect(err).to.not.be.ok;
         done();
       });
     });
@@ -620,7 +654,7 @@ describe('api', function () {
       fs.writeFileSync(opts.resources[0], 'data1');
       fs.writeFileSync(opts.resources[1], 'data2');
       waitOn(opts, function (err) {
-        expect(err).toExist();
+        expect(err).to.be.ok;
         done();
       });
     });
@@ -679,7 +713,7 @@ describe('api', function () {
             done(new Error('Should not be resolved'));
           })
           .catch(function (err) {
-            expect(err).toExist();
+            expect(err).to.be.ok;
             done();
           });
       });
@@ -698,7 +732,7 @@ describe('api', function () {
             done(new Error('Should not be resolved'));
           })
           .catch(function (err) {
-            expect(err).toExist();
+            expect(err).to.be.ok;
             done();
           });
       });
@@ -759,7 +793,7 @@ describe('api', function () {
             done(new Error('Should not be resolved'));
           })
           .catch(function (err) {
-            expect(err).toExist();
+            expect(err).to.be.ok;
             done();
           });
       });
