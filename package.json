@@ -10,7 +10,7 @@
   "author": "Jeff Barczewski <info@codewinds.com>",
   "repository": {
     "type": "git",
-    "url": "http://github.com/jeffbski/wait-on.git"
+    "url": "https://github.com/jeffbski/wait-on.git"
   },
   "bugs": {
     "url": "http://github.com/jeffbski/wait-on/issues"
