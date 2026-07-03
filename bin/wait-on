@@ -1,32 +1,35 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const minimist = require('minimist');
+const { parseArgs } = require('util');
 const path = require('path');
 const waitOn = require('../');
 
 const interval = ['timeout', 'httpTimeout', 'tcpTimeout'];
-const minimistOpts = {
-  string: ['c', 'd', 'i', 's', 't', 'w'].concat(interval),
-  boolean: ['h', 'l', 'r', 'v'],
-  alias: {
-    c: 'config',
-    d: 'delay',
-    i: 'interval',
-    l: 'log',
-    r: 'reverse',
-    s: 'simultaneous',
-    t: 'timeout',
-    v: 'verbose',
-    w: 'window',
-    h: 'help'
-  }
-};
+const optionDefs = {
+  config: { type: 'string', short: 'c' },
+  delay: { type: 'string', short: 'd' },
+  interval: { type: 'string', short: 'i' },
+  log: { type: 'boolean', default: false, short: 'l' },
+  reverse: { type: 'boolean', default: false, short: 'r' },
+  simultaneous: { type: 'string', short: 's' },
+  timeout: { type: 'string', short: 't' },
+  verbose: { type: 'boolean', default: false, short: 'v' },
+  window: { type: 'string', short: 'w' },
+  help: { type: 'boolean', default: false, short: 'h' },
+  httpTimeout: { type: 'string' },
+  tcpTimeout: { type: 'string' },
+}
 
-const argv = minimist(process.argv.slice(2), minimistOpts);
+const { values: argv, positionals: resources } = parseArgs({
+  args: process.argv.slice(2),
+  options: optionDefs,
+  allowPositionals: true
+});
+
 // if a js/json configuration file is provided require it
 const configOpts = argv.config ? require(path.resolve(argv.config)) : {};
-const hasResources = argv._.length || (configOpts.resources && configOpts.resources.length);
+const hasResources = resources.length || (configOpts.resources && configOpts.resources.length);
 
 if (argv.help || !hasResources) {
   // help
@@ -38,8 +41,8 @@ if (argv.help || !hasResources) {
 } else {
   // if resources are present in the command line then they take
   // precedence over those in the config file.
-  if (argv._.length) {
-    configOpts.resources = argv._;
+  if (resources.length) {
+    configOpts.resources = resources;
   }
 
   // now check for specific options and set those
