@@ -14,6 +14,11 @@ const afterEach = mocha.afterEach;
 const chai = require('chai');
 const expect = chai.expect;
 
+// Windows has no Unix domain sockets, Node listens on named pipes instead
+function socketPathIn(dirPath) {
+  return process.platform === 'win32' ? path.join('\\\\?\\pipe', dirPath, 'sock') : path.resolve(dirPath, 'sock');
+}
+
 temp.track(); // cleanup files on exit
 
 describe('api', function () {
@@ -218,7 +223,7 @@ describe('api', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: ['socket:' + socketPath]
       };
@@ -235,11 +240,40 @@ describe('api', function () {
     });
   });
 
+  it('should succeed when a http service is listening to a socket whose path contains a colon', function (done) {
+    temp.mkdir({}, function (err, dirPath) {
+      if (err) return done(err);
+      let socketPath;
+      if (process.platform === 'win32') {
+        socketPath = socketPathIn(dirPath); // named pipe paths contain the drive letter, e.g. \\?\pipe\C:\...
+      } else {
+        const colonDirPath = path.resolve(dirPath, 'a:b');
+        fs.mkdirSync(colonDirPath);
+        socketPath = path.resolve(colonDirPath, 'sock');
+      }
+      const opts = {
+        resources: ['http://unix:' + socketPath + ':http://localhost/', 'http://unix:' + socketPath + ':/foo']
+      };
+
+      setTimeout(function () {
+        httpServer = http.createServer().on('request', function (req, res) {
+          res.end('data');
+        });
+        httpServer.listen(socketPath);
+      }, 300);
+
+      waitOn(opts, function (err) {
+        expect(err).to.not.be.ok;
+        done();
+      });
+    });
+  });
+
   it('should succeed when a http service is listening to a socket', function (done) {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: [
           'http://unix:' + socketPath + ':http://localhost/',
@@ -265,7 +299,7 @@ describe('api', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: [
           'http-get://unix:' + socketPath + ':http://localhost/',
@@ -483,7 +517,7 @@ describe('api', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: ['socket:' + socketPath],
         timeout: 1000,
@@ -542,7 +576,7 @@ describe('api', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
         timeout: 1000,
@@ -569,7 +603,7 @@ describe('api', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: ['package.json', 'http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
         timeout: 1000,
