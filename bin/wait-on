@@ -9,6 +9,7 @@ const interval = ['timeout', 'httpTimeout', 'tcpTimeout'];
 const optionDefs = {
   config: { type: 'string', short: 'c' },
   delay: { type: 'string', short: 'd' },
+  header: { type: 'string', short: 'H', multiple: true },
   interval: { type: 'string', short: 'i' },
   log: { type: 'boolean', default: false, short: 'l' },
   reverse: { type: 'boolean', default: false, short: 'r' },
@@ -94,6 +95,18 @@ function main() {
       configOpts.resources = resources;
     }
 
+    // repeatable -H/--header "Name: value" for http(s) resources. CLI headers
+    // merge with any config-file headers, and the CLI wins on a name conflict.
+    if (argv.header) {
+      let cliHeaders;
+      try {
+        cliHeaders = parseHeaders(argv.header);
+      } catch (err) {
+        return errorExit(err);
+      }
+      configOpts.headers = { ...configOpts.headers, ...cliHeaders };
+    }
+
     // now check for specific options and set those
     const opts = [
       'delay',
@@ -138,6 +151,21 @@ function errorExit(err) {
   process.exit(1);
 }
 
+// turn ['Name: value', ...] into { Name: 'value', ... }, splitting each entry
+// at its first colon so header values may themselves contain colons. Throws on
+// an entry with no colon or an empty name.
+function parseHeaders(headerArgs) {
+  return headerArgs.reduce(function (accum, h) {
+    const idx = h.indexOf(':');
+    const name = idx === -1 ? '' : h.slice(0, idx).trim();
+    if (!name) {
+      throw new Error(`Invalid header "${h}", expected "Name: value"`);
+    }
+    accum[name] = h.slice(idx + 1).trim();
+    return accum;
+  }, {});
+}
+
 function parseInterval(arg) {
   const res = /^([\d.]+)(|ms|s|m|h)$/i.exec(arg);
   if (!res) {
@@ -157,4 +185,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { parseArgv, optionDefs };
+module.exports = { parseArgv, optionDefs, parseHeaders };
