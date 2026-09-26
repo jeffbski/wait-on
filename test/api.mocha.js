@@ -220,6 +220,54 @@ describe('api', function () {
     });
   });
 
+  // #61: waitOn accepts a string or string array as the opts.resources shorthand.
+  describe('string/array opts shorthand (#61)', function () {
+    it('accepts a string, resolving like { resources: [string] } (callback form)', function (done) {
+      setTimeout(function () {
+        httpServer = http.createServer();
+        httpServer.listen(3041, 'localhost');
+      }, 300);
+
+      waitOn('tcp:localhost:3041', function (err) {
+        expect(err).to.not.be.ok;
+        done();
+      });
+    });
+
+    it('accepts a string via the promise form', function () {
+      setTimeout(function () {
+        httpServer = http.createServer();
+        httpServer.listen(3042, 'localhost');
+      }, 300);
+
+      return waitOn('tcp:localhost:3042');
+    });
+
+    it('accepts a string array, resolving like { resources: arr }', function (done) {
+      setTimeout(function () {
+        httpServer = http.createServer();
+        httpServer.listen(3043, 'localhost');
+      }, 300);
+
+      waitOn(['tcp:localhost:3043', 'tcp:3043'], function (err) {
+        expect(err).to.not.be.ok;
+        done();
+      });
+    });
+
+    it('still accepts an object opts unchanged', function (done) {
+      setTimeout(function () {
+        httpServer = http.createServer();
+        httpServer.listen(3044, 'localhost');
+      }, 300);
+
+      waitOn({ resources: ['tcp:localhost:3044'] }, function (err) {
+        expect(err).to.not.be.ok;
+        done();
+      });
+    });
+  });
+
   it('should succeed when a service is listening to a socket', function (done) {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
