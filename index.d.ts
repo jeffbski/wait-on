@@ -2,10 +2,13 @@
 
 import { SecureContextOptions } from 'tls';
 
-declare function waitOn(opts: waitOn.WaitOnOptions, cb: (err: Error | null) => void): void;
-declare function waitOn(opts: waitOn.WaitOnOptions): Promise<void>;
+declare function waitOn(opts: waitOn.WaitOnInput, cb: (err: Error | null) => void): void;
+declare function waitOn(opts: waitOn.WaitOnInput): Promise<void>;
 
 declare namespace waitOn {
+  /** A resources string (or array of them) may be passed directly as shorthand for `{ resources: [...] }`. */
+  type WaitOnInput = WaitOnOptions | string | string[];
+
   interface WaitOnOptions extends Pick<SecureContextOptions, 'ca' | 'cert' | 'key' | 'passphrase'> {
     /** Array of resources to wait for. Prefix determines type: file:, http:, https:, http-get:, https-get:, tcp:, socket: */
     resources: string[];

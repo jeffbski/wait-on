@@ -20,9 +20,10 @@
   "scripts": {
     "lint": "eslint \"lib/**/*.js\" \"test/**/*.js\" \"bin/wait-on\"",
     "publish:next": "npm publish --tag next && npm view",
-    "test": "npm run lint && npm run test:mocha",
+    "test": "npm run lint && npm run test:types && npm run test:mocha",
     "test:coverage": "nyc npm run test:mocha",
-    "test:mocha": "mocha --exit \"test/**/*.mocha.js\""
+    "test:mocha": "mocha --exit \"test/**/*.mocha.js\"",
+    "test:types": "tsc -p test/tsconfig.json"
   },
   "engines": {
     "node": ">=20.0.0"
