@@ -15,3 +15,14 @@ build-lib
 .fastembed_cache
 .nyc_output
 coverage
+
+# Claude Code worktrees (harness-managed, per-developer)
+.claude/worktrees/
+.claude/settings.local.json
+
+# codebase-memory-mcp local graph (per-developer, never committed)
+.codebase-memory/
+
+# Compound Engineering per-checkout local config
+.compound-engineering/config.local.yaml
+.pi/npm/

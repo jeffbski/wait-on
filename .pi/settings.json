@@ -1,0 +1,10 @@
+{
+  "packages": [
+    "git:github.com/EveryInc/compound-engineering-plugin",
+    "git:github.com/DietrichGebert/ponytail",
+    "git:github.com/kevinold/overdrive",
+    "npm:pi-subagents",
+    "npm:pi-mcp-adapter",
+    "npm:pi-ask-user"
+  ]
+}
