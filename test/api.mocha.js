@@ -1026,152 +1026,140 @@ describe('api', function () {
     });
   });
 
-  describe('command', function () {
-    describe('normal mode', function () {
-      it('should succeed when command passes', function (done) {
-        temp.mkdir({}, function (err, dirPath) {
-          if (err) return done(err);
-          const fileExists1 = path.resolve(dirPath, 'exists1')
-          const fileExists2 = path.resolve(dirPath, 'exists2')
-          const opts = {
-            resources: [
-              `command:ls ${fileExists1}`,
-              `command:ls ${fileExists2}`
-            ],
-          };
-          fs.writeFileSync(fileExists1, 'data1');
-          fs.writeFileSync(fileExists2, 'data2');
+  // command: resource (#87, #15, #71). These are real-timer polling tests using short
+  // interval/timeout and node child processes, as the rest of the suite does; none depend
+  // on the wall-clock date, so no clock freezing is needed.
+  describe('command (#87, #15, #71)', function () {
+    this.timeout(10000);
 
-          waitOn(opts)
-            .then(function () {
-              done();
-            })
-            .catch(function (err) {
-              done(err);
-            });
-        });
+    it('succeeds when the command exits 0', function (done) {
+      waitOn({ resources: ['command:node -e "process.exit(0)"'], timeout: 2000, interval: 100 }, function (err) {
+        expect(err).to.not.be.ok;
+        done();
       });
+    });
 
-      it('should succeed when a command passes later', function (done) {
-        temp.mkdir({}, function (err, dirPath) {
-          if (err) return done(err);
-          const fileWillExist1 = path.resolve(dirPath, 'willexist1')
-          const fileWillExist2 = path.resolve(dirPath, 'willexist2')
-          const opts = {
-            resources: [
-              `command:ls ${fileWillExist1}`,
-              `command:ls ${fileWillExist2}`
-            ],
-          };
-          setTimeout(function () {
-            fs.writeFileSync(fileWillExist1, 'data1');
-            fs.writeFileSync(fileWillExist2, 'data2');
-          }, 300);
-
-          waitOn(opts)
-            .then(function () {
-              done();
-            })
-            .catch(function (err) {
-              done(err);
-            });
-        });
+    it('keeps polling to the global timeout when the command keeps exiting non-zero', function (done) {
+      waitOn({ resources: ['command:node -e "process.exit(1)"'], timeout: 600, interval: 100, window: 100 }, function (err) {
+        expect(err).to.be.ok;
+        expect(err.message).to.have.string('Timed out');
+        done();
       });
+    });
 
-      it('should timeout when command fails', function (done) {
-        temp.mkdir({}, function (err, dirPath) {
-          if (err) return done(err);
-          const notExists = path.resolve(dirPath, 'NOTexists')
-          const opts = {
-            resources: [
-              `command:ls ${notExists}`
-            ],
-            timout: 1000,
-          };
-
-          waitOn(opts)
-            .then(function () {
-              done(new Error('Should not be resolved'));
-            })
-            .catch(function (err) {
-              expect(err).toExist();
-              done();
-            });
+    it('succeeds once a failing command starts passing after several polls', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const marker = path.resolve(dirPath, 'ready');
+        const runner = path.resolve(dirPath, 'check.js');
+        // exits non-zero until the marker file appears, then 0
+        fs.writeFileSync(
+          runner,
+          "const fs = require('fs');\nprocess.exit(fs.existsSync(process.argv[2]) ? 0 : 1);\n"
+        );
+        setTimeout(function () {
+          fs.writeFileSync(marker, 'ok');
+        }, 350);
+        waitOn({ resources: [`command:node ${runner} ${marker}`], timeout: 4000, interval: 100 }, function (err) {
+          expect(err).to.not.be.ok;
+          done();
         });
       });
     });
 
-    describe('reverse mode', function () {
-      it('should succeed when command fails in reverse mode', function (done) {
-        temp.mkdir({}, function (err, dirPath) {
-          if (err) return done(err);
-          const notExists = path.resolve(dirPath, 'NOTexists')
-          const opts = {
-            resources: [
-              `command:ls ${notExists}`,
-            ],
-            reverse: true
-          };
-
-          waitOn(opts)
-            .then(function () {
-              done();
-            })
-            .catch(function (err) {
-              done(err);
-            });
-        });
+    it('never runs a slow command concurrently with itself', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const marker = path.resolve(dirPath, 'ready');
+        const counter = path.resolve(dirPath, 'concurrent.json');
+        const runner = path.resolve(dirPath, 'slow.js');
+        // Each run bumps a shared counter, stays alive past the poll interval, then
+        // decrements and exits (non-zero until the marker appears). If two runs ever
+        // overlapped, `max` would exceed 1.
+        fs.writeFileSync(
+          runner,
+          [
+            "const fs = require('fs');",
+            "const [counter, marker] = process.argv.slice(2);",
+            "const s = fs.existsSync(counter) ? JSON.parse(fs.readFileSync(counter, 'utf8')) : { cur: 0, max: 0 };",
+            "s.cur += 1;",
+            "s.max = Math.max(s.max, s.cur);",
+            "fs.writeFileSync(counter, JSON.stringify(s));",
+            "setTimeout(function () {",
+            "  const t = JSON.parse(fs.readFileSync(counter, 'utf8'));",
+            "  t.cur -= 1;",
+            "  fs.writeFileSync(counter, JSON.stringify(t));",
+            "  process.exit(fs.existsSync(marker) ? 0 : 1);",
+            "}, 250);",
+            ""
+          ].join('\n')
+        );
+        setTimeout(function () {
+          fs.writeFileSync(marker, 'ok');
+        }, 700);
+        waitOn(
+          { resources: [`command:node ${runner} ${counter} ${marker}`], timeout: 5000, interval: 100 },
+          function (err) {
+            expect(err).to.not.be.ok;
+            const state = JSON.parse(fs.readFileSync(counter, 'utf8'));
+            expect(state.max).to.equal(1);
+            done();
+          }
+        );
       });
+    });
 
-      it('should succeed when command fails later in reverse mode', function (done) {
-        temp.mkdir({}, function (err, dirPath) {
-          if (err) return done(err);
-          const willBeDeleted1 = path.resolve(dirPath, 'deleteme1')
-          const willBeDeleted2 = path.resolve(dirPath, 'deleteme2')
-          const opts = {
-            resources: [
-              `command:ls ${willBeDeleted1}`,
-              `command:ls ${willBeDeleted2}`
-            ],
-          };
-          fs.writeFileSync(willBeDeleted1, 'data1');
-          fs.writeFileSync(willBeDeleted2, 'data2');
-          setTimeout(function () {
-            fs.unlinkSync(willBeDeleted1);
-            fs.unlinkSync(willBeDeleted2);
-          }, 300);
-
-          waitOn(opts)
-            .then(function () {
-              done();
-            })
-            .catch(function (err) {
-              done(err);
-            });
-        });
+    it('kills a command that exceeds commandTimeout and keeps polling', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const marker = path.resolve(dirPath, 'ready');
+        const runner = path.resolve(dirPath, 'hang.js');
+        // Hangs forever unless the marker exists, in which case it exits 0 immediately.
+        // Without a working per-attempt kill the first run would block the poll loop until
+        // the global timeout, so reaching success proves the hung run was killed.
+        fs.writeFileSync(
+          runner,
+          [
+            "const fs = require('fs');",
+            "if (fs.existsSync(process.argv[2])) process.exit(0);",
+            "setInterval(function () {}, 1000);",
+            ""
+          ].join('\n')
+        );
+        setTimeout(function () {
+          fs.writeFileSync(marker, 'ok');
+        }, 600);
+        waitOn(
+          { resources: [`command:node ${runner} ${marker}`], commandTimeout: 200, timeout: 4000, interval: 100 },
+          function (err) {
+            expect(err).to.not.be.ok;
+            done();
+          }
+        );
       });
+    });
 
-      it('should timeout when command passes in reverse mode', function (done) {
-        temp.mkdir({}, function (err, dirPath) {
-          if (err) return done(err);
-          const exists = path.resolve(dirPath, 'exists1')
-          const opts = {
-            resources: [
-              `command:ls ${exists}`
-            ],
-            reverse: true,
-            timeout: 1000,
-          };
-          fs.writeFileSync(exists, 'data1');
-          waitOn(opts)
-            .then(function () {
-              done(new Error('Should not be resolved'));
-            })
-            .catch(function (err) {
-              expect(err).toExist();
-              done();
-            });
-        });
+    it('in reverse mode, waits until the command starts failing', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const marker = path.resolve(dirPath, 'present');
+        const runner = path.resolve(dirPath, 'check.js');
+        // passes (exit 0) while the marker exists; reverse mode resolves once it fails
+        fs.writeFileSync(
+          runner,
+          "const fs = require('fs');\nprocess.exit(fs.existsSync(process.argv[2]) ? 0 : 1);\n"
+        );
+        fs.writeFileSync(marker, 'ok');
+        setTimeout(function () {
+          fs.unlinkSync(marker);
+        }, 350);
+        waitOn(
+          { resources: [`command:node ${runner} ${marker}`], reverse: true, timeout: 4000, interval: 100 },
+          function (err) {
+            expect(err).to.not.be.ok;
+            done();
+          }
+        );
       });
     });
   });
