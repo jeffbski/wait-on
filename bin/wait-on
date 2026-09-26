@@ -18,65 +18,115 @@ const optionDefs = {
   window: { type: 'string', short: 'w' },
   help: { type: 'boolean', default: false, short: 'h' },
   httpTimeout: { type: 'string' },
-  tcpTimeout: { type: 'string' },
+  tcpTimeout: { type: 'string' }
+};
+
+const hasOwn = Object.prototype.hasOwnProperty;
+
+// Parse argv with util.parseArgs in non-strict mode so an unknown flag is
+// ignored instead of fatal, matching the minimist behaviour callers relied on
+// (strict mode would turn a caller's typo into a crash in a minor release).
+// Because strict is off, two minimist behaviours are reproduced by hand from
+// the token stream:
+//   - the bare argument after an unknown `--flag` becomes that flag's value
+//     (parseArgs would otherwise leave it as a positional / resource)
+//   - `--no-<x>` sets `<x>` to false (parseArgs `allowNegative` needs Node
+//     >=20.16 and the 9.x engines floor is >=20.0.0, so it cannot be used)
+function parseArgv(args) {
+  const { values, tokens } = parseArgs({
+    args,
+    options: optionDefs,
+    allowPositionals: true,
+    strict: false,
+    tokens: true
+  });
+
+  // consume the argument after an unknown space-separated `--flag` as its value
+  const consumed = new Set();
+  tokens.forEach(function (token, i) {
+    if (token.kind !== 'option') return;
+    if (hasOwn.call(optionDefs, token.name)) return; // known option, parseArgs handled it
+    if (token.name.startsWith('no-')) return; // negation, handled below
+    if (token.inlineValue) return; // --flag=value already captured
+    const next = tokens[i + 1];
+    if (next && next.kind === 'positional' && next.index === token.index + 1) {
+      values[token.name] = next.value;
+      consumed.add(next.index);
+    }
+  });
+
+  const resources = tokens
+    .filter(function (token) {
+      return token.kind === 'positional' && !consumed.has(token.index);
+    })
+    .map(function (token) {
+      return token.value;
+    });
+
+  // map `--no-<x>` to `<x>: false`, as minimist did
+  Object.keys(values).forEach(function (key) {
+    if (key.startsWith('no-')) {
+      values[key.slice(3)] = false;
+      delete values[key];
+    }
+  });
+
+  return { argv: values, resources };
 }
 
-const { values: argv, positionals: resources } = parseArgs({
-  args: process.argv.slice(2),
-  options: optionDefs,
-  allowPositionals: true
-});
+function main() {
+  const { argv, resources } = parseArgv(process.argv.slice(2));
+  // if a js/json configuration file is provided require it
+  const configOpts = argv.config ? require(path.resolve(argv.config)) : {};
+  const hasResources = resources.length || (configOpts.resources && configOpts.resources.length);
 
-// if a js/json configuration file is provided require it
-const configOpts = argv.config ? require(path.resolve(argv.config)) : {};
-const hasResources = resources.length || (configOpts.resources && configOpts.resources.length);
+  if (argv.help || !hasResources) {
+    // help
+    fs.createReadStream(path.join(__dirname, '/usage.txt'))
+      .pipe(process.stdout)
+      .on('close', function () {
+        process.exit(1);
+      });
+  } else {
+    // if resources are present in the command line then they take
+    // precedence over those in the config file.
+    if (resources.length) {
+      configOpts.resources = resources;
+    }
 
-if (argv.help || !hasResources) {
-  // help
-  fs.createReadStream(path.join(__dirname, '/usage.txt'))
-    .pipe(process.stdout)
-    .on('close', function () {
-      process.exit(1);
-    });
-} else {
-  // if resources are present in the command line then they take
-  // precedence over those in the config file.
-  if (resources.length) {
-    configOpts.resources = resources;
-  }
-
-  // now check for specific options and set those
-  const opts = [
-    'delay',
-    'httpTimeout',
-    'interval',
-    'log',
-    'reverse',
-    'simultaneous',
-    'timeout',
-    'tcpTimeout',
-    'verbose',
-    'window'
-  ].reduce(function (accum, x) {
-    if (argv[x]) {
-      let value = argv[x];
-      if (interval.includes(x)) {
-        value = parseInterval(value);
+    // now check for specific options and set those
+    const opts = [
+      'delay',
+      'httpTimeout',
+      'interval',
+      'log',
+      'reverse',
+      'simultaneous',
+      'timeout',
+      'tcpTimeout',
+      'verbose',
+      'window'
+    ].reduce(function (accum, x) {
+      if (argv[x]) {
+        let value = argv[x];
+        if (interval.includes(x)) {
+          value = parseInterval(value);
+        }
+        accum[x] = value;
       }
-      accum[x] = value;
-    }
-    return accum;
-  }, configOpts);
+      return accum;
+    }, configOpts);
 
-  waitOn(opts, function (err) {
-    if (err) {
-      return errorExit(err);
-    }
-    // success, could just let it exit on its own, however since
-    // rxjs window waits an extra loop before heeding the unsubscribe
-    // we can exit to speed things up
-    process.exit(0);
-  });
+    waitOn(opts, function (err) {
+      if (err) {
+        return errorExit(err);
+      }
+      // success, could just let it exit on its own, however since
+      // rxjs window waits an extra loop before heeding the unsubscribe
+      // we can exit to speed things up
+      process.exit(0);
+    });
+  }
 }
 
 function errorExit(err) {
@@ -102,3 +152,9 @@ function parseInterval(arg) {
     case 'h': return Math.floor(value * 1000 * 60 * 60);
   }
 }
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = { parseArgv, optionDefs };
