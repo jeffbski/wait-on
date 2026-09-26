@@ -43,8 +43,9 @@ Standard Options:
 
  --httpTimeout
 
-  Maximum time in ms to wait for an HTTP HEAD/GET request, default 0
-  which results in using the OS default
+  Maximum time in ms to wait for an HTTP HEAD/GET request,
+  default 0 which results in no timeout (OS/library default).
+  Use postfix 'ms', 's', 'm' or 'h' to change the unit.
 
  -i, --interval
 
@@ -73,11 +74,6 @@ Standard Options:
   --tcpTimeout
 
   Maximum time in ms for tcp connect, default 300ms
-  Use postfix 'ms', 's', 'm' or 'h' to change the unit.
-
-  --httpTimeout
-
-  Maximum time to wait for the HTTP request, default Infinity
   Use postfix 'ms', 's', 'm' or 'h' to change the unit.
 
  -v, --verbose

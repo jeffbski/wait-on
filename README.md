@@ -4,7 +4,7 @@ wait-on is a cross-platform command line utility which will wait for files, port
 
 wait-on will wait for period of time for a file to stop growing before triggering availability which is good for monitoring files that are being built. Likewise wait-on will wait for period of time for other resources to remain available before triggering success.
 
-For http(s) resources wait-on will check that the requests are returning 2XX (success) to HEAD or GET requests (after following any redirects).
+For http(s) resources wait-on will check that the requests return a 2XX (success) status (after following any redirects). The `http:` and `https:` prefixes send an HTTP `HEAD` request; the `http-get:` and `https-get:` prefixes send an HTTP `GET` request. Use the `-get:` forms when a server does not implement `HEAD` (many respond `404`/`405` to `HEAD`), or when success depends on the response body.
 
 wait-on can also be used in reverse mode which waits for resources to NOT be available. This is useful in waiting for services to shutdown before continuing. (Thanks @skarbovskiy for adding this feature)
 
@@ -73,8 +73,8 @@ Description:
        file:      - regular file (also default type). ex: file:/path/to/file
        http:      - HTTP HEAD returns 2XX response. ex: http://m.com:90/foo
        https:     - HTTPS HEAD returns 2XX response. ex: https://my/bar
-       http-get:  - HTTP GET returns 2XX response. ex: http://m.com:90/foo
-       https-get: - HTTPS GET returns 2XX response. ex: https://my/bar
+       http-get:  - HTTP GET returns 2XX response. ex: http-get://m.com:90/foo
+       https-get: - HTTPS GET returns 2XX response. ex: https-get://my/bar
        tcp:       - TCP port is listening. ex: 1.2.3.4:9000 or foo.com:700
        socket:    - Domain Socket is listening. ex: socket:/path/to/sock
                     For http over socket, use http://unix:SOCK_PATH:URL_PATH
@@ -93,8 +93,9 @@ Standard Options:
 
  --httpTimeout
 
-  Maximum time in ms to wait for an HTTP HEAD/GET request, default 0
-  which results in using the OS default
+  Maximum time in ms to wait for an HTTP HEAD/GET request,
+  default 0 which results in no timeout (OS/library default).
+  Use postfix 'ms', 's', 'm' or 'h' to change the unit.
 
 -i, --interval
 
@@ -123,11 +124,6 @@ Standard Options:
   --tcpTimeout
 
   Maximum time in ms for tcp connect, default 300ms
-  Use postfix 'ms', 's', 'm' or 'h' to change the unit.
-
-  --httpTimeout
-
-  Maximum time to wait for the HTTP request, default Infinity
   Use postfix 'ms', 's', 'm' or 'h' to change the unit.
 
  -v, --verbose
@@ -196,11 +192,13 @@ var opts = {
     user: 'theuser', // or username
     pass: 'thepassword' // or password
   },
-  strictSSL: false,
+  strictSSL: false, // default false; set true to reject invalid/self-signed certs
   followRedirect: true,
   headers: {
     'x-custom': 'headers'
   },
+  // validateStatus is a function, so it can only be set via the Node API or a
+  // .js config file (not a JSON config). Default accepts 2XX.
   validateStatus: function (status) {
     return status >= 200 && status < 300; // default if not provided
   }
@@ -266,11 +264,18 @@ waitOn(opts, [cb]) - function which triggers resource checks
 ```
 
 - opts.auth: { user, pass }
-- opts.strictSSL: false,
+- opts.strictSSL: optional flag, when false (the default) invalid or self-signed certificates are accepted; set true to reject them
 - opts.followRedirect: false, // defaults to true
 - opts.headers: { 'x-custom': 'headers' },
+- opts.validateStatus: optional function `(status) => boolean` deciding which HTTP status codes count as success, default accepts 2XX. Because it is a function it can only be set via the Node API or a `.js` config file, not a JSON config.
 
 - cb(err) - if err is provided then, resource checks did not succeed
+
+## Notes
+
+### localhost and IPv6
+
+On Node.js 20+ `localhost` resolves to both IPv4 and IPv6 and wait-on connects to whichever address the service is actually listening on, because Node enables `autoSelectFamily` (Happy Eyeballs) by default. On older Node.js versions `localhost` may resolve to `::1` (IPv6) only, so a service bound to `127.0.0.1` (IPv4) can appear unavailable. If that happens, use `127.0.0.1` explicitly or upgrade to Node.js 20+.
 
 ## Goals
 
