@@ -3,6 +3,7 @@
 const waitOn = require('../');
 const fs = require('fs');
 const http = require('http');
+const net = require('net');
 const path = require('path');
 const temp = require('temp');
 const mkdirp = require('mkdirp');
@@ -236,6 +237,105 @@ describe('api', function () {
       waitOn(opts, function (err) {
         expect(err).to.not.be.ok;
         done();
+      });
+    });
+  });
+
+  // #82: the tcp/socket checks must destroy() their connections, not leak them.
+  it('should close the tcp connection after a successful check (#82)', function (done) {
+    const server = net.createServer();
+    let sawConnection = false;
+    let serverConnClosed = false;
+    server.on('connection', function (socket) {
+      sawConnection = true;
+      socket.on('close', function () {
+        serverConnClosed = true;
+      });
+    });
+    server.listen(3002, 'localhost', function () {
+      waitOn({ resources: ['tcp:localhost:3002'], timeout: 2000 }, function (err) {
+        if (err) {
+          server.close();
+          return done(err);
+        }
+        // The client destroys its socket on success, so the server's
+        // connection count returns to 0.
+        const check = function () {
+          server.getConnections(function (gcErr, count) {
+            if (gcErr) {
+              server.close();
+              return done(gcErr);
+            }
+            if (count === 0 && serverConnClosed) {
+              server.close();
+              expect(sawConnection).to.equal(true);
+              return done();
+            }
+            setTimeout(check, 20);
+          });
+        };
+        check();
+      });
+    });
+  });
+
+  it('should not leak a socket handle after a timed-out tcp check (#82)', function (done) {
+    // 10.255.255.1 is unrouted, so the connect never completes and the
+    // per-attempt tcpTimeout fires. mocha --exit would mask a leaked handle,
+    // so assert directly that no TCPSocketWrap survives the destroy().
+    function tcpHandleCount() {
+      return process.getActiveResourcesInfo().filter(function (n) {
+        return n === 'TCPSocketWrap';
+      }).length;
+    }
+    const baseline = tcpHandleCount();
+    waitOn(
+      { resources: ['tcp:10.255.255.1:80'], tcpTimeout: 250, timeout: 600, interval: 5000 },
+      function (err) {
+        expect(err).to.be.ok; // it timed out
+        setTimeout(function () {
+          expect(tcpHandleCount()).to.equal(baseline);
+          done();
+        }, 100);
+      }
+    );
+  });
+
+  it('should close the unix socket connection after a successful check (#82)', function (done) {
+    temp.mkdir({}, function (err, dirPath) {
+      if (err) return done(err);
+      const socketPath = socketPathIn(dirPath);
+      const server = net.createServer();
+      let sawConnection = false;
+      let serverConnClosed = false;
+      server.on('connection', function (socket) {
+        sawConnection = true;
+        socket.on('close', function () {
+          serverConnClosed = true;
+        });
+      });
+      server.listen(socketPath, function () {
+        waitOn({ resources: ['socket:' + socketPath], timeout: 2000 }, function (waitErr) {
+          if (waitErr) {
+            server.close();
+            return done(waitErr);
+          }
+          const check = function () {
+            server.getConnections(function (gcErr, count) {
+              if (gcErr) {
+                server.close();
+                return done(gcErr);
+              }
+              if (count === 0 && serverConnClosed) {
+                server.close();
+                expect(sawConnection).to.equal(true);
+                return done();
+              }
+              setTimeout(check, 20);
+            });
+          };
+          check();
+        });
       });
     });
   });
