@@ -10,7 +10,7 @@ declare namespace waitOn {
   type WaitOnInput = WaitOnOptions | string | string[];
 
   interface WaitOnOptions extends Pick<SecureContextOptions, 'ca' | 'cert' | 'key' | 'passphrase'> {
-    /** Array of resources to wait for. Prefix determines type: file:, http:, https:, http-get:, https-get:, tcp:, socket: */
+    /** Array of resources to wait for. Prefix determines type: file:, http:, https:, http-get:, https-get:, tcp:, socket:, command: */
     resources: string[];
     /** Initial delay in ms before polling begins. @default 0 */
     delay?: number;
@@ -34,6 +34,8 @@ declare namespace waitOn {
     window?: number;
     /** TCP connect timeout in ms. @default 300 */
     tcpTimeout?: number;
+    /** Per-attempt timeout in ms for `command:` resources; a command still running at this bound is killed and the next poll retries. 0 disables the limit. @default 0 */
+    commandTimeout?: number;
 
     /** HTTP proxy configuration. Set to false to disable. @default undefined */
     proxy?: false | WaitOnProxyOptions;

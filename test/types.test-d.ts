@@ -43,6 +43,9 @@ waitOn({
 // proxy disabled
 waitOn({ resources: ['http://localhost:3000'], proxy: false });
 
+// command: resource with per-attempt commandTimeout (U11)
+waitOn({ resources: ['command:pg_isready'], commandTimeout: 2000 });
+
 // --- invalid usages: each must fail compilation ---
 
 // @ts-expect-error unknown option is rejected
