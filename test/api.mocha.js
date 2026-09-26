@@ -833,4 +833,48 @@ describe('api', function () {
       });
     });
   });
+
+  describe('resource validation (#217, #140, #141)', function () {
+    it('should reject a malformed http-get resource promptly, not poll to timeout (#217)', function (done) {
+      // http-get:localhost:3000/x -> http:localhost:3000/x (no //): would poll forever before
+      const start = Date.now();
+      // no timeout option: if this polled instead of failing fast, mocha would time out
+      waitOn({ resources: ['http-get:localhost:3000/x'] }, function (err) {
+        expect(err).to.be.ok;
+        expect(err.message).to.have.string('http-get:localhost:3000/x');
+        expect(Date.now() - start).to.be.below(1000);
+        done();
+      });
+    });
+
+    it('should reject tcp:// with a tcp:host:port hint, not poll to timeout (#140)', function (done) {
+      waitOn({ resources: ['tcp://127.0.0.1:3000'] }, function (err) {
+        expect(err).to.be.ok;
+        expect(err.message).to.have.string('tcp://127.0.0.1:3000');
+        expect(err.message).to.have.string('tcp:host:port');
+        done();
+      });
+    });
+
+    it('should succeed against a tcp IPv6 listener (#141)', function (done) {
+      httpServer = http.createServer().on('request', function (req, res) {
+        res.end('data');
+      });
+      httpServer.once('error', done); // surfaces a missing IPv6 loopback rather than hanging
+      httpServer.listen(3020, '::1', function () {
+        waitOn({ resources: ['tcp:[::1]:3020'], timeout: 2000, tcpTimeout: 500 }, function (err) {
+          expect(err).to.not.be.ok;
+          done();
+        });
+      });
+    });
+
+    it('should time out (no TypeError) for a tcp IPv6 with no listener (#141)', function (done) {
+      waitOn({ resources: ['tcp:[::1]:3029'], timeout: 800, interval: 100, tcpTimeout: 200, window: 100 }, function (err) {
+        expect(err).to.be.ok;
+        expect(err.message).to.have.string('Timed out');
+        done();
+      });
+    });
+  });
 });
