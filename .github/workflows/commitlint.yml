@@ -1,0 +1,30 @@
+# Lint PR commit messages against Conventional Commits (CI only, no husky).
+# Uses commitlint.config.js at the repo root.
+name: Commitlint
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # need the full PR commit range
+      - name: ⎔ Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+      - name: ✅ Lint PR commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          npx -p @commitlint/cli@21.2.3 -p @commitlint/config-conventional@21.2.3
+          commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose

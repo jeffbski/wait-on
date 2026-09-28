@@ -1,0 +1,115 @@
+# Release automation, modeled on semantic-release's own release.yml.
+# semantic-release computes the version and GitHub release notes from Conventional Commits,
+# publishes to npm (OIDC trusted publishing + provenance), and commits the version back to master.
+#
+# Human in the loop: the `release` job runs in the GitHub Environment `release`, which has required
+# reviewers. Every push to master queues a run that waits for approval. Remove the environment's
+# required reviewers to make releases fully automatic — no code change. See .github/RELEASING.md.
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+# One release at a time; never drop a queued release (KTD1/KTD11).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+# Least privilege by default; each job raises only what it needs (KTD11).
+permissions:
+  contents: read
+
+jobs:
+  # Lint + test gate in the same run, so a red commit never reaches the approval prompt (KTD8).
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: ⎔ Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+          cache: npm
+      - name: 📥 Install dependencies
+        run: npm ci
+      - name: ▶️ Lint and test
+        run: npm test
+
+  # Dry-run preview. NOT read-only: semantic-release core runs verifyAuth (git push-access) even in
+  # dry-run, so this needs contents: write. Overriding to the two analysis plugins means no npm OIDC
+  # or github/git write verification is required, so the preview runs on forks too — which is how a
+  # fork push proves the flow (KTD8/KTD9).
+  preview:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: ⎔ Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+          cache: npm
+      - name: 🔮 Dry-run preview (next version + notes)
+        id: preview
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx -p semantic-release@25.0.9 semantic-release \
+            --dry-run \
+            --plugins @semantic-release/commit-analyzer @semantic-release/release-notes-generator \
+            > preview.log 2>&1 || true
+          version="$(grep -oE 'The next release version is [0-9]+\.[0-9]+\.[0-9]+' preview.log | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | tail -1 || true)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          {
+            if [ -n "$version" ]; then
+              echo "## 🔮 Next release: v$version"
+            else
+              echo "## 🔮 No release due (no relevant commits)"
+            fi
+            echo ""
+            echo "<details><summary>semantic-release --dry-run log</summary>"
+            echo ""
+            echo '```text'
+            cat preview.log
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Gated publish + commit-back. Guarded to the upstream repo so forks never publish (KTD9).
+  release:
+    needs: preview
+    if: github.repository == 'jeffbski/wait-on' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write # commit the version back and create the GitHub release
+      issues: write # semantic-release comments on released issues
+      pull-requests: write # semantic-release comments on released PRs
+      id-token: write # npm OIDC trusted publishing (KTD2/KTD10)
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: ⎔ Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+          cache: npm
+          registry-url: https://registry.npmjs.org # KTD12
+      - name: ⬆️ Upgrade npm for OIDC trusted publishing
+        run: npm install --global npm@latest # guarantees npm >=11.5.1 on PATH for OIDC
+      - name: 🚀 Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # commit-back uses GITHUB_TOKEN (KTD3)
+          NPM_CONFIG_PROVENANCE: 'true' # KTD10
+        run: npx -p semantic-release@25.0.9 -p @semantic-release/git@11.0.1 semantic-release
