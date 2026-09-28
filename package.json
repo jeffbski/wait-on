@@ -28,16 +28,16 @@
   },
   "devDependencies": {
     "chai": "^6.2.2",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.5",
     "eslint-plugin-chai-friendly": "^1.2.1",
     "mkdirp": "^3.0.1",
-    "mocha": "^11.7.6",
+    "mocha": "^11.8.0",
     "nyc": "^18.0.0",
     "temp": "^0.9.4"
   },
   "dependencies": {
-    "axios": "^1.18.1",
-    "joi": "^18.2.3",
+    "axios": "^1.20.0",
+    "joi": "^18.2.9",
     "lodash": "^4.18.1",
     "minimist": "^1.2.8",
     "rxjs": "^7.8.2"
