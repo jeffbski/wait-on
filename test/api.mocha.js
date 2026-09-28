@@ -806,6 +806,13 @@ describe('api', function () {
   });
 
   it('should succeed when file resources are not available later in reverse mode', function (done) {
+    // Windows can leave an unlinked file in a "delete pending" state (AV/Search indexer
+    // holds a handle without FILE_SHARE_DELETE, so Node falls back to delete-on-close).
+    // While pending, fs.stat keeps succeeding and returns the real size, so reverse mode
+    // rightly keeps polling until the OS finishes the delete. Give real headroom, and retry
+    // with fresh temp files so a transient linger doesn't flake CI. (jeffbski/wait-on#238)
+    this.timeout(15000);
+    this.retries(2);
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -968,6 +975,10 @@ describe('api', function () {
     });
 
     it('should succeed when file resources are not available later in reverse mode', function (done) {
+      // See the callback-form twin above: Windows delete-pending keeps fs.stat succeeding
+      // after unlink, so reverse mode rightly keeps polling. Headroom + retry. (#238)
+      this.timeout(15000);
+      this.retries(2);
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
