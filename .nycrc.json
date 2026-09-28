@@ -2,5 +2,11 @@
   "all": true,
   "include": ["lib/**/*.js", "bin/wait-on"],
   "exclude": ["test/**/*.js"],
+  "extension": [".js", ""],
+  "check-coverage": true,
+  "branches": 95,
+  "lines": 98,
+  "functions": 94,
+  "statements": 97,
   "reporter": ["text", "html"]
 }
