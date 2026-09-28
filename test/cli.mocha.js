@@ -665,6 +665,92 @@ describe('cli', function () {
       });
     });
   });
+
+  context('http headers (-H/--header)', () => {
+    it('sends a single -H header to the server', function (done) {
+      let received = null;
+      httpServer = http.createServer().on('request', function (req, res) {
+        received = req.headers;
+        res.end('data');
+      });
+      httpServer.listen(8130, 'localhost', function () {
+        execCLI(['http://localhost:8130', '-H', 'X-Test: 1'].concat(FAST_OPTS), {}).on('exit', function (code) {
+          expect(code).to.equal(0);
+          expect(received).to.have.property('x-test', '1');
+          done();
+        });
+      });
+    });
+
+    it('sends two -H headers to the server', function (done) {
+      let received = null;
+      httpServer = http.createServer().on('request', function (req, res) {
+        received = req.headers;
+        res.end('data');
+      });
+      httpServer.listen(8131, 'localhost', function () {
+        execCLI(['http://localhost:8131', '-H', 'X-One: a', '-H', 'X-Two: b'].concat(FAST_OPTS), {}).on(
+          'exit',
+          function (code) {
+            expect(code).to.equal(0);
+            expect(received).to.have.property('x-one', 'a');
+            expect(received).to.have.property('x-two', 'b');
+            done();
+          }
+        );
+      });
+    });
+
+    it('splits a header value only at the first colon', function (done) {
+      let received = null;
+      httpServer = http.createServer().on('request', function (req, res) {
+        received = req.headers;
+        res.end('data');
+      });
+      httpServer.listen(8132, 'localhost', function () {
+        execCLI(['http://localhost:8132', '-H', 'X-Time: 12:34:56'].concat(FAST_OPTS), {}).on('exit', function (code) {
+          expect(code).to.equal(0);
+          expect(received).to.have.property('x-time', '12:34:56');
+          done();
+        });
+      });
+    });
+
+    it('exits non-zero with a message for a malformed header (no colon)', function (done) {
+      let stderr = '';
+      // no server needed: the malformed header is rejected before any request
+      const child = execCLI(['http://localhost:8133', '-H', 'BadHeader'].concat(FAST_OPTS), {});
+      child.stderr.on('data', function (data) {
+        stderr += data.toString();
+      });
+      child.on('exit', function (code) {
+        expect(code).to.not.equal(0);
+        expect(stderr).to.have.string('BadHeader');
+        done();
+      });
+    });
+
+    it('merges CLI headers with config-file headers, CLI winning on a conflict', function (done) {
+      let received = null;
+      httpServer = http.createServer().on('request', function (req, res) {
+        received = req.headers;
+        res.end('data');
+      });
+      httpServer.listen(8134, 'localhost', function () {
+        execCLI(
+          ['--config', path.join(__dirname, 'config-headers.js'), 'http://localhost:8134', '-H', 'x-both: from-cli'].concat(
+            FAST_OPTS
+          ),
+          {}
+        ).on('exit', function (code) {
+          expect(code).to.equal(0);
+          expect(received).to.have.property('x-config', 'config-only');
+          expect(received).to.have.property('x-both', 'from-cli');
+          done();
+        });
+      });
+    });
+  });
 });
 
 describe('cli parseArgv', function () {
@@ -727,5 +813,33 @@ describe('cli parseArgv', function () {
   it('collects multiple positionals as resources', function () {
     const parsed = parseArgv(['file:a', 'file:b', '-l']);
     expect(parsed.resources).to.deep.equal(['file:a', 'file:b']);
+  });
+});
+
+describe('cli parseHeaders', function () {
+  const { parseHeaders } = require(CLI_PATH);
+
+  it('parses "Name: value" into an object with a trimmed name and value', function () {
+    expect(parseHeaders(['X-Test: 1'])).to.deep.equal({ 'X-Test': '1' });
+  });
+
+  it('collects multiple headers', function () {
+    expect(parseHeaders(['X-One: a', 'X-Two: b'])).to.deep.equal({ 'X-One': 'a', 'X-Two': 'b' });
+  });
+
+  it('splits only at the first colon so values may contain colons', function () {
+    expect(parseHeaders(['X-Time: 12:34:56'])).to.deep.equal({ 'X-Time': '12:34:56' });
+  });
+
+  it('throws, naming the entry, for a header with no colon', function () {
+    expect(function () {
+      parseHeaders(['BadHeader']);
+    }).to.throw(/BadHeader/);
+  });
+
+  it('throws for a header with an empty name', function () {
+    expect(function () {
+      parseHeaders([': value']);
+    }).to.throw();
   });
 });

@@ -87,6 +87,13 @@ Standard Options:
 
   js or json config file, useful for http(s) options and resources
 
+ -H, --header
+
+  HTTP header to send with http(s) resource requests, in "Name: value"
+  form. Repeatable for multiple headers. CLI headers override config-file
+  headers on a name conflict.
+  ex: -H "Authorization: Bearer TOKEN" -H "x-custom: 1"
+
  -d, --delay
 
   Initial delay before checking for resources in ms, default 0
@@ -266,7 +273,7 @@ waitOn(opts, [cb]) - function which triggers resource checks
 - opts.auth: { user, pass }
 - opts.strictSSL: optional flag, when false (the default) invalid or self-signed certificates are accepted; set true to reject them
 - opts.followRedirect: false, // defaults to true
-- opts.headers: { 'x-custom': 'headers' },
+- opts.headers: { 'x-custom': 'headers' }, also settable from the CLI with the repeatable `-H, --header "Name: value"` flag (CLI headers win over config-file headers on a name conflict)
 - opts.validateStatus: optional function `(status) => boolean` deciding which HTTP status codes count as success, default accepts 2XX. Because it is a function it can only be set via the Node API or a `.js` config file, not a JSON config.
 
 - cb(err) - if err is provided then, resource checks did not succeed

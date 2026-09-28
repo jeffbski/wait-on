@@ -37,6 +37,13 @@ Standard Options:
 
   js or json config file, useful for http(s) options
 
+ -H, --header
+
+  HTTP header to send with http(s) resource requests, in "Name: value"
+  form. Repeatable for multiple headers. CLI headers override config-file
+  headers on a name conflict.
+  ex: -H "Authorization: Bearer TOKEN" -H "x-custom: 1"
+
  -d, --delay
 
   Initial delay before checking for resources in ms, default 0
