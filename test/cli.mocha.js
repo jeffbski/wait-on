@@ -14,6 +14,11 @@ const afterEach = mocha.afterEach;
 const chai = require('chai');
 const expect = chai.expect;
 
+// Windows has no Unix domain sockets, Node listens on named pipes instead
+function socketPathIn(dirPath) {
+  return process.platform === 'win32' ? path.join('\\\\?\\pipe', dirPath, 'sock') : path.resolve(dirPath, 'sock');
+}
+
 const CLI_PATH = path.resolve(__dirname, '../bin/wait-on');
 
 temp.track(); // cleanup files on exit
@@ -195,7 +200,7 @@ describe('cli', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: ['socket:' + socketPath]
       };
@@ -216,7 +221,7 @@ describe('cli', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: ['http://unix:' + socketPath + ':http://localhost/', 'http://unix:' + socketPath + ':http://localhost/foo']
       };
@@ -239,7 +244,7 @@ describe('cli', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: ['http-get://unix:' + socketPath + ':http://localhost/', 'http-get://unix:' + socketPath + ':http://localhost/foo']
       };
@@ -486,7 +491,7 @@ describe('cli', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: ['socket:' + socketPath],
         timeout: 1000,
@@ -506,7 +511,7 @@ describe('cli', function () {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
-      socketPath = path.resolve(dirPath, 'sock');
+      socketPath = socketPathIn(dirPath);
       const opts = {
         resources: ['http://unix:' + socketPath + ':/', 'http://unix:' + socketPath + ':/foo'],
         timeout: 1000,
