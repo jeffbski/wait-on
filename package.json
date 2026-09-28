@@ -4,6 +4,7 @@
   "version": "9.2.0",
   "type": "commonjs",
   "main": "lib/wait-on",
+  "types": "index.d.ts",
   "bin": {
     "wait-on": "bin/wait-on"
   },
@@ -25,21 +26,24 @@
   "scripts": {
     "lint": "eslint \"lib/**/*.js\" \"test/**/*.js\" \"bin/wait-on\"",
     "publish:next": "npm publish --tag next && npm view",
-    "test": "npm run lint && npm run test:mocha",
+    "test": "npm run lint && npm run test:types && npm run test:mocha",
     "test:coverage": "nyc npm run test:mocha",
-    "test:mocha": "mocha --exit \"test/**/*.mocha.js\""
+    "test:mocha": "mocha --exit \"test/**/*.mocha.js\"",
+    "test:types": "tsc -p test/tsconfig.json"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "chai": "^6.2.2",
     "eslint": "^9.39.5",
     "eslint-plugin-chai-friendly": "^1.2.1",
     "mkdirp": "^3.0.1",
     "mocha": "^11.8.0",
     "nyc": "^18.0.0",
-    "temp": "^0.9.4"
+    "temp": "^0.9.4",
+    "typescript": "^6.0.2"
   },
   "dependencies": {
     "axios": "^1.20.0",
