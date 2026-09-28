@@ -27,6 +27,17 @@ Get the fork's stacked lanes (kevinold/wait-on#4) merged into jeffbski/wait-on a
 - D3. **The fork lane is the upstream PR's head.** Review fixes land on the fork lane and restack the later lanes with `--onto`. The upstream PRs update automatically. For lane 1, also move `up/ci/engine-strict-stack-trigger` to the new lane-1 head. The fork PR closes when its upstream PR merges, not when it opens.
 - D4. **Upstream-facing PR bodies.** Rewrite each body for the maintainer: what changed and why, how it was tested, `Closes #N` for the upstream issues (real keywords are correct upstream), "Depends on #N" for the predecessor, and credit for contributors. No fork process vocabulary (lane, spine, KTD, train IDs).
 
+## Status (2026-09-28)
+
+Every lane is open upstream, with `[Lx]` title prefixes and one "Depends on" chain. By user direction, all trains were opened at once instead of one at a time (D1 superseded):
+
+- 9.1.1: #226 → #227 → #228 → #229 → #230 → #231
+- 9.2.0: #233 → #234 → #235 → #236 → #237
+- 10.0.0: #238 → #239 → #240
+- Harness (independent): #232
+
+Merge in chain order. Cut 9.1.1 after #231, 9.2.0 after #237, and 10.0.0 after #240. U3 and U4 below are done. U5 still applies.
+
 ## Units
 
 ### U1. (Retired) Upstream branch builder
