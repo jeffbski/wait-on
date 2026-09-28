@@ -129,11 +129,28 @@ rule either way.
 | Symptom in the `release` job | Cause | Fix |
 |---|---|---|
 | `ENEEDAUTH` / `Invalid npm token` / OIDC exchange failed | The trusted publisher fields don't match | Recheck step 2. The workflow filename is `release.yml` and the environment is `release`, both exact |
+| `E403 ... OIDC permission denied for this action` at `npm publish` (verify step said the OIDC exchange succeeded) | An `.npmrc` auth line (for example from `setup-node` `registry-url` with no `NPM_TOKEN`) makes npm skip OIDC | Keep `registry-url` off the release job's `setup-node`. Then [recover the half-finished release](#recovering-a-half-finished-release) |
+| Re-run says "The local branch master is behind the remote one" | A failed run already pushed its `chore(release)` commit, so re-running the old run is stale | Don't re-run. [Recover the half-finished release](#recovering-a-half-finished-release) |
 | Provenance or repository mismatch | `repository.url` changed | Keep `git+https://github.com/jeffbski/wait-on.git` in `package.json` |
 | `EGITNOPERMISSION` / push rejected | Branch protection blocks the Actions bot | See the next section |
 | Preview says "No release due" but you expected one | No `fix:`/`feat:`/breaking commit since the last tag | Expected behavior. Non-conventional or `chore:`/`docs:` commits don't release |
 | Job never asks for approval | The `release` environment has no required reviewers | Step 1 |
 | Run stuck "Waiting" for weeks | Pending deployments expire after 30 days | Approve or reject. The next push queues a fresh run |
+
+## Recovering a half-finished release
+
+semantic-release commits the version and pushes the tag **before** it publishes. If `npm publish`
+then fails, `master` has a `chore(release): X.Y.Z [skip ci]` commit and a `vX.Y.Z` tag, but nothing
+is on npm and there's no GitHub release. The next run sees the tag and thinks X.Y.Z already shipped.
+
+1. Check nothing was published: `npm view wait-on version` still shows the previous version.
+2. Delete **only the tag** (keep the `chore(release)` commit):
+   `git push origin :refs/tags/vX.Y.Z` (and `git tag -d vX.Y.Z` locally if you fetched it).
+3. Merge the fix (or any commit) to `master` and approve the new **Release** run. semantic-release
+   finds the previous tag, computes X.Y.Z again, re-tags the new `HEAD`, publishes to npm, and
+   creates the GitHub release. The version files already say X.Y.Z, so no second bump commit is made.
+
+Never delete a tag whose version *is* on npm. That version is permanent; ship the next one instead.
 
 ## Rolling back a bad publish
 

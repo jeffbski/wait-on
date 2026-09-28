@@ -105,7 +105,9 @@ jobs:
         with:
           node-version: lts/*
           cache: npm
-          registry-url: https://registry.npmjs.org # KTD12
+          # No registry-url: with it, setup-node writes `_authToken=${NODE_AUTH_TOKEN}` to .npmrc.
+          # With no NPM_TOKEN that is an empty token, so npm skips the OIDC exchange and the
+          # publish fails with `E403 OIDC permission denied`. npmjs.org is already the default.
       - name: ⬆️ Upgrade npm for OIDC trusted publishing
         run: npm install --global npm@latest # guarantees npm >=11.5.1 on PATH for OIDC
       - name: 🚀 Release

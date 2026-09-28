@@ -7,6 +7,12 @@
   "bin": {
     "wait-on": "bin/wait-on"
   },
+  "files": [
+    "bin/",
+    "lib/",
+    "exampleConfig.js",
+    "index.d.ts"
+  ],
   "author": "Jeff Barczewski <info@codewinds.com>",
   "repository": {
     "type": "git",
