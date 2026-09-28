@@ -20,6 +20,7 @@ function socketPathIn(dirPath) {
 }
 
 const CLI_PATH = path.resolve(__dirname, '../bin/wait-on');
+const { parseArgv } = require(CLI_PATH);
 
 temp.track(); // cleanup files on exit
 
@@ -648,5 +649,83 @@ describe('cli', function () {
         done();
       });
     });
+  });
+
+  context('argument parsing', () => {
+    it('should ignore an unknown flag instead of erroring (non-strict parseArgs)', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const resource = path.resolve(dirPath, 'foo');
+        fs.writeFileSync(resource, 'data');
+        // unknown flag placed last so it does not consume the resource as its value
+        execCLI([resource].concat(FAST_OPTS).concat(['--bogus']), {}).on('exit', function (code) {
+          expect(code).to.equal(0);
+          done();
+        });
+      });
+    });
+  });
+});
+
+describe('cli parseArgv', function () {
+  const RES = 'tcp:3000';
+
+  // Every documented flag in bin/usage.txt maps to the same option minimist produced.
+  const table = [
+    { args: ['-c', 'cfg.js'], key: 'config', value: 'cfg.js' },
+    { args: ['--config', 'cfg.js'], key: 'config', value: 'cfg.js' },
+    { args: ['-d', '10'], key: 'delay', value: '10' },
+    { args: ['--delay', '10'], key: 'delay', value: '10' },
+    { args: ['-i', '100'], key: 'interval', value: '100' },
+    { args: ['--interval', '100'], key: 'interval', value: '100' },
+    { args: ['-s', '1'], key: 'simultaneous', value: '1' },
+    { args: ['--simultaneous', '1'], key: 'simultaneous', value: '1' },
+    { args: ['-t', '5000'], key: 'timeout', value: '5000' },
+    { args: ['--timeout', '5000'], key: 'timeout', value: '5000' },
+    { args: ['-w', '750'], key: 'window', value: '750' },
+    { args: ['--window', '750'], key: 'window', value: '750' },
+    { args: ['--httpTimeout', '70ms'], key: 'httpTimeout', value: '70ms' },
+    { args: ['--tcpTimeout', '300'], key: 'tcpTimeout', value: '300' },
+    { args: ['-l'], key: 'log', value: true },
+    { args: ['--log'], key: 'log', value: true },
+    { args: ['-r'], key: 'reverse', value: true },
+    { args: ['--reverse'], key: 'reverse', value: true },
+    { args: ['-v'], key: 'verbose', value: true },
+    { args: ['--verbose'], key: 'verbose', value: true },
+    { args: ['-h'], key: 'help', value: true },
+    { args: ['--help'], key: 'help', value: true }
+  ];
+
+  table.forEach(function (row) {
+    it('parses `' + row.args.join(' ') + '` to ' + row.key + '=' + row.value, function () {
+      const parsed = parseArgv(row.args.concat([RES]));
+      expect(parsed.argv[row.key]).to.equal(row.value);
+      expect(parsed.resources).to.deep.equal([RES]);
+    });
+  });
+
+  it('ignores an unknown flag rather than throwing', function () {
+    expect(function () {
+      parseArgv([RES, '--totally-unknown']);
+    }).to.not.throw();
+    expect(parseArgv([RES, '--totally-unknown']).resources).to.deep.equal([RES]);
+  });
+
+  it('treats the argument after an unknown --flag as its value, not a resource', function () {
+    const parsed = parseArgv(['--unknown', 'val', RES]);
+    expect(parsed.argv.unknown).to.equal('val');
+    expect(parsed.resources).to.deep.equal([RES]);
+  });
+
+  it('maps --no-<x> boolean forms to <x>: false', function () {
+    const parsed = parseArgv(['--no-verbose', RES]);
+    expect(parsed.argv.verbose).to.equal(false);
+    expect(parsed.argv).to.not.have.property('no-verbose');
+    expect(parsed.resources).to.deep.equal([RES]);
+  });
+
+  it('collects multiple positionals as resources', function () {
+    const parsed = parseArgv(['file:a', 'file:b', '-l']);
+    expect(parsed.resources).to.deep.equal(['file:a', 'file:b']);
   });
 });
