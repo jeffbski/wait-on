@@ -634,4 +634,19 @@ describe('cli', function () {
       });
     });
   });
+
+  context('resource validation', () => {
+    it('should exit non-zero and name the bad resource for a malformed resource (#140)', function (done) {
+      let stderr = '';
+      const child = execCLI(['tcp://127.0.0.1:3000'].concat(FAST_OPTS), {});
+      child.stderr.on('data', function (data) {
+        stderr += data.toString();
+      });
+      child.on('exit', function (code) {
+        expect(code).to.not.equal(0);
+        expect(stderr).to.have.string('tcp://127.0.0.1:3000');
+        done();
+      });
+    });
+  });
 });
