@@ -32,14 +32,21 @@ describe('https/tls and proxy parity', function () {
   let cert;
 
   before(function () {
+    // Cert generation shells out to openssl; on slow Windows CI runners this can
+    // exceed the suite's tight per-test timeout, so give the one-time setup its
+    // own generous budget (the EC keygen below is near-instant — belt-and-suspenders).
+    this.timeout(30000);
     try {
       execSync('openssl version', { stdio: 'ignore' });
     } catch {
       this.skip(); // openssl not available in this environment
     }
     certDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wait-on-tls-'));
+    // EC P-256 (prime256v1): constant-time keygen, no RSA prime search — that
+    // search made this hook intermittently exceed 6000ms on Windows. Node TLS
+    // accepts EC self-signed certs, so every assertion below is unchanged.
     execSync(
-      `openssl req -x509 -newkey rsa:2048 -keyout ${certDir}/key.pem -out ${certDir}/cert.pem -days 1 -nodes -subj "/CN=localhost"`,
+      `openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -keyout ${certDir}/key.pem -out ${certDir}/cert.pem -days 1 -nodes -subj "/CN=localhost"`,
       { stdio: 'ignore' }
     );
     key = fs.readFileSync(path.join(certDir, 'key.pem'));
