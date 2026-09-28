@@ -1,0 +1,9 @@
+# Binary CLI tool versions (mise-managed).
+
+# Code-graph MCP server (codebase-memory-mcp). Single static binary from GitHub
+# releases; Claude Code launches it via .mcp.json (`mise exec -- codebase-memory-mcp`).
+# The graph is per-developer, cached under ~/.cache/codebase-memory-mcp, and kept
+# fresh by the SessionStart hook (scripts/reindex-codebase-memory.sh).
+# Backend-prefixed key (`github:owner/repo`) — optional tool.
+[tools]
+"github:DeusData/codebase-memory-mcp" = "0.11.0"

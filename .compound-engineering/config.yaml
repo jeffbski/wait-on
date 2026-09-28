@@ -1,0 +1,20 @@
+# Commented template for .compound-engineering/config.yaml.
+# bootstrap.sh copies this to config.yaml only if config.yaml is absent
+# (your edits are preserved on rerun).
+
+# Reasoning gear: which model authors plans. Fable escalates for the
+# reasoning-heavy step so the cheap worker does not have to plan.
+plan_model: fable
+
+# Reasoning gear for ce-brainstorm.
+brainstorm_model: fable
+
+# Peer gear: a DIFFERENT model adversarially re-reviews the work.
+# You never trust one model grading its own output.
+#
+# EGRESS DISCLOSURE: `codex` sends full file/document content to a separate
+# third-party model (codex / OpenAI). It runs on a separate subscription — a
+# second opinion, not free tokens, and not covered by your Claude budget.
+# Enable it as a REVIEWED, OPT-IN decision against your data sensitivity.
+# If your code must not leave your Claude provider, delete this line.
+cross_model_peer: codex

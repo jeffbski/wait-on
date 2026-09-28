@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR:-.}/scripts/reindex-codebase-memory.sh\""
+          }
+        ]
+      }
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "compound-engineering-plugin": {
+      "source": {
+        "source": "github",
+        "repo": "EveryInc/compound-engineering-plugin"
+      }
+    },
+    "agent-browser": {
+      "source": {
+        "source": "github",
+        "repo": "vercel-labs/agent-browser"
+      }
+    },
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    },
+    "overdrive": {
+      "source": {
+        "source": "github",
+        "repo": "kevinold/overdrive"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "compound-engineering@compound-engineering-plugin": true,
+    "agent-browser@agent-browser": true,
+    "caveman@caveman": true,
+    "ponytail@ponytail": true,
+    "overdrive@overdrive": true
+  }
+}
