@@ -23,25 +23,19 @@ Get the fork's stacked lanes (kevinold/wait-on#4) merged into jeffbski/wait-on a
 ## Decisions
 
 - D1. **One train at a time.** (user-directed; chosen over one lane at a time, all 14 at once, and asking for upstream lane branches.) Open only the current train's PRs. Each is based on `master` and states "Depends on #N". The next train opens after the current one is merged and released.
-- D2. **Strip CE plan docs from upstream PRs.** (user-directed; chosen over submitting the lane branches as-is.) The fork lanes keep their `docs/plans/**` commits. Upstream gets parallel `up/<lane-branch>` branches with those changes removed. The PR body links to the fork plan instead.
-- D3. **The fork lane stays the source of truth.** Review fixes land on the fork lane first. Then that lane's `up/` branch, and every later one, is regenerated. The fork PR closes when its upstream PR merges, not when it opens.
+- D2. **Upstream PRs carry the CE plan docs.** (user-directed, 2026-09-28; this reverses an earlier choice to strip them.) Upstream PRs use the fork lane branches directly as `--head kevinold:<lane-branch>`, so each PR includes its lane plan, and lane 1 also includes the spine plan. Upstream PRs and fork PRs share commits. Lane 1's PR (#226) was opened from `up/ci/engine-strict-stack-trigger` and reset to the lane-1 head; later lanes need no `up/` branch.
+- D3. **The fork lane is the upstream PR's head.** Review fixes land on the fork lane and restack the later lanes with `--onto`. The upstream PRs update automatically. For lane 1, also move `up/ci/engine-strict-stack-trigger` to the new lane-1 head. The fork PR closes when its upstream PR merges, not when it opens.
 - D4. **Upstream-facing PR bodies.** Rewrite each body for the maintainer: what changed and why, how it was tested, `Closes #N` for the upstream issues (real keywords are correct upstream), "Depends on #N" for the predecessor, and credit for contributors. No fork process vocabulary (lane, spine, KTD, train IDs).
 
 ## Units
 
-### U1. Upstream branch builder
+### U1. (Retired) Upstream branch builder
 
-For train T, build `up/<branch>` for each lane in stack order. Lane i is replayed onto `up/<lane i-1>`, or onto `origin/master` for the first lane of the train. Each lane commit is cherry-picked without committing, `docs/` is dropped from the result, and the commit is re-created with its original author and message. A commit that ends up empty is skipped (the `docs: add lane plan` commits).
-
-Verify:
-- `git diff <fork lane head> up/<lane>` shows only `docs/` paths.
-- The authors from `git log` match the fork lane (contributor authorship survives).
-- `npm test` passes on `up/<lane>`.
+Not needed after the D2 reversal: upstream PRs use the fork lane branches directly.
 
 ### U2. Upstream PR for lane 1 (fork #19)
 
-1. Push `up/ci/engine-strict-stack-trigger` to the fork.
-2. Open a PR in jeffbski/wait-on with base `master`, head `kevinold:up/ci/engine-strict-stack-trigger`, and a D4 body. It closes #186 and references #225.
+1. (Done: jeffbski/wait-on#226.) Open a PR in jeffbski/wait-on with base `master`, head `kevinold:up/ci/engine-strict-stack-trigger` (reset to the lane-1 head, including its plans), and a D4 body. It closes #186 and references #225.
 3. Expect the first-time-contributor "Approve and run" gate on Actions. That gate is not a failure.
 4. Post the upstream PR link on fork PR #19 and on spine #4.
 
@@ -52,7 +46,7 @@ Same as U2, one PR per lane in stack order. Each body says "Depends on #<previou
 ### U4. Later trains
 
 After 9.1.1 merges and is released:
-1. Rebuild the 9.2.0 `up/` branches on the new `origin/master` (U1).
+1. If upstream merged with merge commits, open the 9.2.0 lane branches as they are. If it squashed, restack them `--onto origin/master` first.
 2. Open them (U3 shape).
 3. Repeat for 10.0.0. Its L12 picks up jeffbski/wait-on#225: pin the 22.19.0 matrix row before opening.
 
@@ -67,6 +61,6 @@ When an upstream PR merges:
 
 | Risk | Mitigation |
 |---|---|
-| A PR is squash-merged, so later PRs repeat commits | Rebuild the later `up/` branches with `--onto origin/master` (U1) |
-| The maintainer asks for changes | D3: fix the fork lane, rebuild the `up/` branches, force-push with lease |
+| A PR is squash-merged, so later PRs repeat commits | Restack the later lane branches with `--onto origin/master` |
+| The maintainer asks for changes | D3: fix the fork lane, restack the later lanes, force-push with lease |
 | No response | The origin plan's rule: after 14 days of silence, offer the whole train as a single PR |
