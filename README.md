@@ -44,6 +44,7 @@ wait-on tcp:4000 && NEXT_CMD # wait for service to listen on a TCP port
 wait-on socket:/path/mysock # wait for service to listen on domain socket
 wait-on http://unix:/var/SOCKPATH:http://server/a/foo # wait for http HEAD on domain socket
 wait-on http-get://unix:/var/SOCKPATH:http://server/a/foo # wait for http GET on domain socket
+wait-on command:./health-check.sh && NEXT_CMD # wait until the command exits 0
 ```
 
 ```
@@ -80,6 +81,8 @@ Description:
                     For http over socket, use http://unix:SOCK_PATH:URL_PATH
                     like http://unix:/path/to/sock:http://server/foo/bar or
                          http-get://unix:/path/to/sock:http://server/foo/bar
+       command:   - Executes an arbitrary command. ex: "command:ls /tmp"
+                    Succeeds if the exit code of the command is 0
 
 Standard Options:
 
@@ -248,6 +251,7 @@ waitOn(opts, [cb]) - function which triggers resource checks
 - opts.simultaneous - optional count to limit concurrent connections per resource at a time, setting to 1 waits for previous connection to succeed, fail, or timeout before sending another, default infinity
 - opts.timeout - optional timeout in ms, default Infinity. Aborts with error.
 - opts.tcpTimeout - optional tcp timeout in ms, default 300ms
+- opts.commandTimeout - optional per-attempt timeout in ms for `command:` resources. A command still running at this bound is killed and the next poll retries. Default 0 (no limit). A `command:` resource never runs more than one process at a time regardless of `simultaneous`.
 - opts.verbose - optional flag which outputs debug output, default false
 - opts.window - optional stabilization time in ms, default 750ms. Waits this amount of time for file sizes to stabilize or other resource availability to remain unchanged.
 - http(s) specific options, see https://nodejs.org/api/tls.html#tls_tls_connect_options_callback for specific details

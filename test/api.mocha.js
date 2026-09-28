@@ -1025,4 +1025,142 @@ describe('api', function () {
       });
     });
   });
+
+  // command: resource (#87, #15, #71). These are real-timer polling tests using short
+  // interval/timeout and node child processes, as the rest of the suite does; none depend
+  // on the wall-clock date, so no clock freezing is needed.
+  describe('command (#87, #15, #71)', function () {
+    this.timeout(10000);
+
+    it('succeeds when the command exits 0', function (done) {
+      waitOn({ resources: ['command:node -e "process.exit(0)"'], timeout: 2000, interval: 100 }, function (err) {
+        expect(err).to.not.be.ok;
+        done();
+      });
+    });
+
+    it('keeps polling to the global timeout when the command keeps exiting non-zero', function (done) {
+      waitOn({ resources: ['command:node -e "process.exit(1)"'], timeout: 600, interval: 100, window: 100 }, function (err) {
+        expect(err).to.be.ok;
+        expect(err.message).to.have.string('Timed out');
+        done();
+      });
+    });
+
+    it('succeeds once a failing command starts passing after several polls', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const marker = path.resolve(dirPath, 'ready');
+        const runner = path.resolve(dirPath, 'check.js');
+        // exits non-zero until the marker file appears, then 0
+        fs.writeFileSync(
+          runner,
+          "const fs = require('fs');\nprocess.exit(fs.existsSync(process.argv[2]) ? 0 : 1);\n"
+        );
+        setTimeout(function () {
+          fs.writeFileSync(marker, 'ok');
+        }, 350);
+        waitOn({ resources: [`command:node ${runner} ${marker}`], timeout: 4000, interval: 100 }, function (err) {
+          expect(err).to.not.be.ok;
+          done();
+        });
+      });
+    });
+
+    it('never runs a slow command concurrently with itself', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const marker = path.resolve(dirPath, 'ready');
+        const counter = path.resolve(dirPath, 'concurrent.json');
+        const runner = path.resolve(dirPath, 'slow.js');
+        // Each run bumps a shared counter, stays alive past the poll interval, then
+        // decrements and exits (non-zero until the marker appears). If two runs ever
+        // overlapped, `max` would exceed 1.
+        fs.writeFileSync(
+          runner,
+          [
+            "const fs = require('fs');",
+            "const [counter, marker] = process.argv.slice(2);",
+            "const s = fs.existsSync(counter) ? JSON.parse(fs.readFileSync(counter, 'utf8')) : { cur: 0, max: 0 };",
+            "s.cur += 1;",
+            "s.max = Math.max(s.max, s.cur);",
+            "fs.writeFileSync(counter, JSON.stringify(s));",
+            "setTimeout(function () {",
+            "  const t = JSON.parse(fs.readFileSync(counter, 'utf8'));",
+            "  t.cur -= 1;",
+            "  fs.writeFileSync(counter, JSON.stringify(t));",
+            "  process.exit(fs.existsSync(marker) ? 0 : 1);",
+            "}, 250);",
+            ""
+          ].join('\n')
+        );
+        setTimeout(function () {
+          fs.writeFileSync(marker, 'ok');
+        }, 700);
+        waitOn(
+          { resources: [`command:node ${runner} ${counter} ${marker}`], timeout: 5000, interval: 100 },
+          function (err) {
+            expect(err).to.not.be.ok;
+            const state = JSON.parse(fs.readFileSync(counter, 'utf8'));
+            expect(state.max).to.equal(1);
+            done();
+          }
+        );
+      });
+    });
+
+    it('kills a command that exceeds commandTimeout and keeps polling', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const marker = path.resolve(dirPath, 'ready');
+        const runner = path.resolve(dirPath, 'hang.js');
+        // Hangs forever unless the marker exists, in which case it exits 0 immediately.
+        // Without a working per-attempt kill the first run would block the poll loop until
+        // the global timeout, so reaching success proves the hung run was killed.
+        fs.writeFileSync(
+          runner,
+          [
+            "const fs = require('fs');",
+            "if (fs.existsSync(process.argv[2])) process.exit(0);",
+            "setInterval(function () {}, 1000);",
+            ""
+          ].join('\n')
+        );
+        setTimeout(function () {
+          fs.writeFileSync(marker, 'ok');
+        }, 600);
+        waitOn(
+          { resources: [`command:node ${runner} ${marker}`], commandTimeout: 200, timeout: 4000, interval: 100 },
+          function (err) {
+            expect(err).to.not.be.ok;
+            done();
+          }
+        );
+      });
+    });
+
+    it('in reverse mode, waits until the command starts failing', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const marker = path.resolve(dirPath, 'present');
+        const runner = path.resolve(dirPath, 'check.js');
+        // passes (exit 0) while the marker exists; reverse mode resolves once it fails
+        fs.writeFileSync(
+          runner,
+          "const fs = require('fs');\nprocess.exit(fs.existsSync(process.argv[2]) ? 0 : 1);\n"
+        );
+        fs.writeFileSync(marker, 'ok');
+        setTimeout(function () {
+          fs.unlinkSync(marker);
+        }, 350);
+        waitOn(
+          { resources: [`command:node ${runner} ${marker}`], reverse: true, timeout: 4000, interval: 100 },
+          function (err) {
+            expect(err).to.not.be.ok;
+            done();
+          }
+        );
+      });
+    });
+  });
 });

@@ -751,6 +751,60 @@ describe('cli', function () {
       });
     });
   });
+
+  describe('command (#87, #15, #71)', function () {
+    // node is used instead of a shell builtin so these run identically on every OS in CI
+    const PASS = 'command:node -e "process.exit(0)"';
+    const FAIL = 'command:node -e "process.exit(1)"';
+
+    it('exits 0 when the command exits 0', function (done) {
+      execCLI([PASS].concat(FAST_OPTS), {}).on('exit', function (code) {
+        expect(code).to.equal(0);
+        done();
+      });
+    });
+
+    it('exits 0 when a command starts passing later', function (done) {
+      temp.mkdir({}, function (err, dirPath) {
+        if (err) return done(err);
+        const marker = path.resolve(dirPath, 'ready');
+        setTimeout(function () {
+          fs.writeFileSync(marker, 'ok');
+        }, 300);
+        // exits non-zero until the marker file appears, then 0
+        const cmd = `command:node -e "process.exit(require('fs').existsSync(process.argv[1]) ? 0 : 1)" ${marker}`;
+        execCLI([cmd].concat(FAST_OPTS), {}).on('exit', function (code) {
+          expect(code).to.equal(0);
+          done();
+        });
+      });
+    });
+
+    it('exits non-zero (times out) when the command never passes', function (done) {
+      execCLI([FAIL].concat(FAST_OPTS), {}).on('exit', function (code) {
+        expect(code).to.not.equal(0);
+        done();
+      });
+    });
+
+    describe('reverse mode', function () {
+      const REV_OPTS = FAST_OPTS.concat(['-r']);
+
+      it('exits 0 when the command exits non-zero', function (done) {
+        execCLI([FAIL].concat(REV_OPTS), {}).on('exit', function (code) {
+          expect(code).to.equal(0);
+          done();
+        });
+      });
+
+      it('exits non-zero (times out) when the command keeps passing', function (done) {
+        execCLI([PASS].concat(REV_OPTS), {}).on('exit', function (code) {
+          expect(code).to.not.equal(0);
+          done();
+        });
+      });
+    });
+  });
 });
 
 describe('cli parseArgv', function () {
