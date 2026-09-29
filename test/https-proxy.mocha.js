@@ -190,4 +190,94 @@ describe('https/tls and proxy parity', function () {
       });
     }).to.not.throw();
   });
+
+  // ---- B1: proxy URL normalization + construction never throws synchronously ----
+  // A proxy object axios normalized (bare/expanded/bracketed IPv6 host, or a protocol
+  // with or without a trailing colon) must build a valid undici URL. Proof it worked:
+  // against a DEAD proxy the check reaches the overall-timeout error ('Timed out ...'),
+  // which is only possible if the URL parsed and the request was actually attempted.
+  // A construction error ('Invalid URL') would instead surface immediately (guard test).
+  const DEAD_PROXY = { timeout: 600, interval: 100, window: 100 };
+  [
+    { label: 'a bare IPv6 host', proxy: { host: '::1', port: 1 } },
+    { label: 'an already-bracketed IPv6 host (no double-bracket)', proxy: { host: '[::1]', port: 1 } },
+    { label: 'an expanded IPv6 host', proxy: { host: '2001:db8::1', port: 1 } },
+    { label: "protocol 'http:' (trailing colon stripped)", proxy: { host: '127.0.0.1', port: 1, protocol: 'http:' } },
+    { label: "protocol 'https:' (trailing colon stripped)", proxy: { host: '127.0.0.1', port: 1, protocol: 'https:' } },
+    { label: "protocol 'http' (no colon)", proxy: { host: '127.0.0.1', port: 1, protocol: 'http' } },
+    { label: 'an IPv6 host with proxy credentials', proxy: { host: '::1', port: 1, auth: { username: 'u', password: 'p@:/' } } }
+  ].forEach(function ({ label, proxy }) {
+    it(`should build a valid proxy URL for ${label} and reach the timeout via callback`, function (done) {
+      let threw = false;
+      try {
+        waitOn({ resources: ['http://localhost:65002/'], proxy, ...DEAD_PROXY }, function (err) {
+          expect(err).to.be.ok;
+          expect(err.message).to.match(/Timed out/); // parsed OK -> dead proxy contacted -> timeout (not 'Invalid URL')
+          done();
+        });
+      } catch (e) {
+        threw = true;
+        done(e);
+      }
+      expect(threw).to.equal(false); // never a synchronous throw out of waitOn()
+    });
+  });
+
+  it('should route a dispatcher construction error to the callback, not throw synchronously', function (done) {
+    // A host that still cannot form a URL after normalization (space is not a valid
+    // authority char) makes new ProxyAgent() throw; the guard must deliver it via cb.
+    let threw = false;
+    try {
+      waitOn({ resources: ['http://localhost:65003/'], proxy: { host: 'bad host', port: 8080 }, timeout: 600 }, function (err) {
+        expect(err).to.be.ok; // construction error delivered, not swallowed
+        done();
+      });
+    } catch (e) {
+      threw = true;
+      done(e);
+    }
+    expect(threw).to.equal(false);
+  });
+
+  // ---- B2: opts.auth -> Basic header, axios parity ----
+  // capture the Authorization header the server actually receives.
+  function seenAuthFor(opts, assertSeen) {
+    return function (done) {
+      let seen = 'MISSING';
+      listenHttp((req, res) => { seen = req.headers.authorization; res.statusCode = 200; res.end('ok'); }, function (port) {
+        waitOn({ resources: [`http://localhost:${port}/`], ...opts, ...FAST }, function (err) {
+          expect(err).to.not.be.ok;
+          assertSeen(seen);
+          done();
+        });
+      });
+    };
+  }
+  const basic = (u, p) => 'Basic ' + Buffer.from(`${u}:${p}`).toString('base64');
+
+  // auth overrides an existing Authorization header (any case) instead of comma-merging.
+  ['Authorization', 'authorization', 'AUTHORIZATION', 'AuThOrIzAtIon'].forEach(function (headerName) {
+    it(`should let opts.auth override a custom ${headerName} header (no comma-merge)`,
+      seenAuthFor(
+        { headers: { [headerName]: 'Bearer CUSTOM' }, auth: { username: 'user', password: 'p' } },
+        (seen) => expect(seen).to.equal(basic('user', 'p'))
+      ));
+  });
+
+  // partial / empty auth builds a Basic header exactly as axios did (each side -> '').
+  [
+    { label: 'username + password', auth: { username: 'user', password: 'p@ss/word' }, expected: basic('user', 'p@ss/word') },
+    { label: 'password only', auth: { password: 'p' }, expected: basic('', 'p') },
+    { label: 'username only', auth: { username: 'u' }, expected: basic('u', '') },
+    { label: 'empty object', auth: {}, expected: basic('', '') }
+  ].forEach(function ({ label, auth, expected }) {
+    it(`should build a Basic header for auth with ${label}`,
+      seenAuthFor({ auth }, (seen) => expect(seen).to.equal(expected)));
+  });
+
+  it('should pass a custom Authorization header through untouched when no auth is set',
+    seenAuthFor({ headers: { Authorization: 'Bearer KEEPME' } }, (seen) => expect(seen).to.equal('Bearer KEEPME')));
+
+  it('should send no Authorization header when neither auth nor a header is set',
+    seenAuthFor({}, (seen) => expect(seen).to.equal(undefined)));
 });
