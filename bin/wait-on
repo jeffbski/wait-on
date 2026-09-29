@@ -14,6 +14,7 @@ const optionDefs = {
   log: { type: 'boolean', default: false, short: 'l' },
   reverse: { type: 'boolean', default: false, short: 'r' },
   simultaneous: { type: 'string', short: 's' },
+  'status-codes': { type: 'string' },
   timeout: { type: 'string', short: 't' },
   verbose: { type: 'boolean', default: false, short: 'v' },
   window: { type: 'string', short: 'w' },
@@ -107,6 +108,17 @@ function main() {
       configOpts.headers = { ...configOpts.headers, ...cliHeaders };
     }
 
+    // --status-codes replaces any config-file validateStatus (CLI wins) and a
+    // repeated flag keeps its last value. Checked against undefined rather than
+    // truthiness so an empty or missing value is an error, not silently ignored.
+    if (argv['status-codes'] !== undefined) {
+      try {
+        configOpts.validateStatus = parseStatusCodes(argv['status-codes']);
+      } catch (err) {
+        return errorExit(err);
+      }
+    }
+
     // now check for specific options and set those
     const opts = [
       'delay',
@@ -166,6 +178,30 @@ function parseHeaders(headerArgs) {
   }, {});
 }
 
+// turn '200-299,404' into a validateStatus predicate. Each comma-separated
+// entry is a status code or an inclusive lo-hi range within 100-599. Throws,
+// naming the entry, on anything else (a bare --status-codes parses to true).
+function parseStatusCodes(arg) {
+  if (typeof arg !== 'string') {
+    throw new Error('--status-codes requires a value, ex: --status-codes 200-499');
+  }
+  const codes = new Set();
+  arg.split(',').forEach(function (entry) {
+    const res = /^\s*(\d{3})\s*(?:-\s*(\d{3})\s*)?$/.exec(entry);
+    const lo = res ? Number(res[1]) : NaN;
+    const hi = res && res[2] ? Number(res[2]) : lo;
+    if (!(lo >= 100 && hi <= 599 && lo <= hi)) {
+      throw new Error(`Invalid --status-codes entry "${entry.trim()}", expected a code or range in 100-599 like 404 or 200-499`);
+    }
+    for (let code = lo; code <= hi; code++) {
+      codes.add(code);
+    }
+  });
+  return function (status) {
+    return codes.has(status);
+  };
+}
+
 function parseInterval(arg) {
   const res = /^([\d.]+)(|ms|s|m|h)$/i.exec(arg);
   if (!res) {
@@ -185,4 +221,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { parseArgv, optionDefs, parseHeaders };
+module.exports = { parseArgv, optionDefs, parseHeaders, parseStatusCodes };

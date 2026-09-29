@@ -4,7 +4,7 @@ wait-on is a cross-platform command line utility which will wait for files, port
 
 wait-on will wait for period of time for a file to stop growing before triggering availability which is good for monitoring files that are being built. Likewise wait-on will wait for period of time for other resources to remain available before triggering success.
 
-For http(s) resources wait-on will check that the requests return a 2XX (success) status (after following any redirects). The `http:` and `https:` prefixes send an HTTP `HEAD` request; the `http-get:` and `https-get:` prefixes send an HTTP `GET` request. Use the `-get:` forms when a server does not implement `HEAD` (many respond `404`/`405` to `HEAD`), or when success depends on the response body.
+For http(s) resources wait-on will check that the requests return a 2XX (success) status (after following any redirects); use `--status-codes` to accept other statuses, e.g. `--status-codes 200-499` for a server whose probe path answers `404`. The `http:` and `https:` prefixes send an HTTP `HEAD` request; the `http-get:` and `https-get:` prefixes send an HTTP `GET` request. Use the `-get:` forms when a server does not implement `HEAD` (many respond `404`/`405` to `HEAD`), or when success depends on the response body.
 
 wait-on can also be used in reverse mode which waits for resources to NOT be available. This is useful in waiting for services to shutdown before continuing. (Thanks @skarbovskiy for adding this feature)
 
@@ -96,6 +96,14 @@ Standard Options:
   form. Repeatable for multiple headers. CLI headers override config-file
   headers on a name conflict.
   ex: -H "Authorization: Bearer TOKEN" -H "x-custom: 1"
+
+ --status-codes
+
+  HTTP status codes that count as success for http(s) resources, instead
+  of the default 2XX. A code, an inclusive range, or a comma-separated
+  list of both. Overrides a config-file validateStatus. If repeated, the
+  last value wins.
+  ex: --status-codes 200-499 or --status-codes 200,204,404
 
  -d, --delay
 
@@ -208,7 +216,8 @@ var opts = {
     'x-custom': 'headers'
   },
   // validateStatus is a function, so it can only be set via the Node API or a
-  // .js config file (not a JSON config). Default accepts 2XX.
+  // .js config file (not a JSON config). Default accepts 2XX. From the CLI,
+  // --status-codes sets it from a list of codes/ranges and overrides this one.
   validateStatus: function (status) {
     return status >= 200 && status < 300; // default if not provided
   }
@@ -278,7 +287,7 @@ waitOn(opts, [cb]) - function which triggers resource checks
 - opts.strictSSL: optional flag, when false (the default) invalid or self-signed certificates are accepted; set true to reject them
 - opts.followRedirect: false, // defaults to true
 - opts.headers: { 'x-custom': 'headers' }, also settable from the CLI with the repeatable `-H, --header "Name: value"` flag (CLI headers win over config-file headers on a name conflict)
-- opts.validateStatus: optional function `(status) => boolean` deciding which HTTP status codes count as success, default accepts 2XX. Because it is a function it can only be set via the Node API or a `.js` config file, not a JSON config.
+- opts.validateStatus: optional function `(status) => boolean` deciding which HTTP status codes count as success, default accepts 2XX. Because it is a function it can only be set via the Node API or a `.js` config file, not a JSON config. From the CLI, `--status-codes 200-499` (a code, a range, or a comma-separated list) sets it and overrides a config-file `validateStatus`.
 
 - cb(err) - if err is provided then, resource checks did not succeed
 
