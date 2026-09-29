@@ -1018,12 +1018,17 @@ describe('cli parseStatusCodes', function () {
     expect([200, 404, 405, 201, 406].map(accept)).to.deep.equal([true, true, true, false, false]);
   });
 
-  ['abc', '2xx', '600', '99', '499-200', '200,,204', '', '200-'].forEach(function (value) {
+  ['abc', '2xx', '600', '99', '050', '499-200', '200,,204', '', '200-'].forEach(function (value) {
     it('throws, naming the entry, for `' + value + '`', function () {
       expect(function () {
         parseStatusCodes(value);
       }).to.throw(/--status-codes/);
     });
+  });
+
+  it('accepts the 100 and 599 bounds', function () {
+    const accept = parseStatusCodes('100,599');
+    expect([100, 599].map(accept)).to.deep.equal([true, true]);
   });
 
   it('names the offending entry in the message', function () {
