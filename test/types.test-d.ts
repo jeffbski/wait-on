@@ -85,6 +85,13 @@ void httpSig;
 // #250 regression: TLS options beyond ca/cert/key/passphrase must type-check
 waitOn({ resources: ['https://localhost:3000'], ciphers: 'HIGH:!aNULL' });
 
+// #250 regression: non-string header values must type-check, matching
+// @types/wait-on (Record<string, any>) and the runtime (headers: Joi.object()).
+waitOn({
+  resources: ['http://localhost:3000'],
+  headers: { Authorization: 'Bearer token', 'X-Count': 42, 'X-Enabled': true },
+});
+
 // --- invalid usages: each must fail compilation ---
 
 // @ts-expect-error unknown option is rejected

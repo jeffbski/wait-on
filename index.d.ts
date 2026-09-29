@@ -51,8 +51,12 @@ declare namespace waitOn {
     strictSSL?: boolean;
     /** Follow HTTP 3xx redirects. @default true */
     followRedirect?: boolean;
-    /** Additional HTTP request headers. */
-    headers?: Record<string, string>;
+    /**
+     * Additional HTTP request headers. Values may be strings, numbers, or
+     * booleans (as `@types/wait-on` and the runtime accept); they are passed
+     * through to the http client.
+     */
+    headers?: Record<string, string | number | boolean>;
   }
 
   interface WaitOnAuth {
