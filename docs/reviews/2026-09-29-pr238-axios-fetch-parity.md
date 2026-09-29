@@ -12,10 +12,12 @@
 
 Types are solid: `index.d.ts` is a **superset** of the pre-refactor types (no narrowing, **no axios type references**), and the `@types/wait-on` consumer test compiles. Everything a caller passes via the published types maps 1:1 to fetch/undici with identical defaults: `headers`, `auth` (full creds), `ca`/`cert`/`key`/`passphrase`, `strictSSL`, `followRedirect` (true and false — undici `redirect:'manual'` returns the real 302, empirically), `validateStatus`, `--status-codes`, `proxy:false`, `proxy` object with a clean host/port, `proxy` unset (env), `http://unix:` / named pipes, all polling options. No leaks; teardown/abort/body-cancel verified.
 
-**One genuine bug to fix for the literal "no exceptions" bar, plus narrow/benign edges:**
+> **UPDATE (fixed in commit `69e380f`):** B1 and B2 below are **resolved** with full scenario tests (192 passing). B1: proxy URLs are normalized (IPv6 bracketed, protocol colon stripped) and dispatcher construction is guarded so errors reach the callback; B2: `auth` strips any case-variant `Authorization` and builds Basic for partial creds (axios parity). See "Fixes applied" at the end.
 
-- **[MED · reproduced] B1 — proxy sync-throw escapes the callback contract.** A proxy object with a bare IPv6 host (`{host:'::1',port:8080}`) or a `protocol` with a trailing colon (`'http:'`) makes `buildDispatcher` throw **synchronously** out of `waitOn()` — the callback never fires. This violates the API's all-errors-via-callback/promise contract (which 238's own test asserts). This is the one item to fix.
-- **[LOW · reproduced] B2 — `auth` + a capital-case custom `Authorization` header collide.** `{...headers}` keeps `Authorization` while the auth code sets `authorization`; undici merges them comma-joined (`"Bearer T, Basic …"`) instead of `auth` overriding, where axios deleted the existing header and won. Contradictory/rare config.
+**Two bugs — both now FIXED — plus narrow/benign edges:**
+
+- **[MED · reproduced · FIXED] B1 — proxy sync-throw escapes the callback contract.** A proxy object with a bare IPv6 host (`{host:'::1',port:8080}`) or a `protocol` with a trailing colon (`'http:'`) made `buildDispatcher` throw **synchronously** out of `waitOn()` — the callback never fired. Violated the API's all-errors-via-callback/promise contract (which 238's own test asserts).
+- **[LOW · reproduced · FIXED] B2 — `auth` + a capital-case custom `Authorization` header collide.** `{...headers}` kept `Authorization` while the auth code set `authorization`; undici merged them comma-joined (`"Bearer T, Basic …"`) instead of `auth` overriding, where axios deleted the existing header and won.
 - **Narrow/benign (downgraded after the second review):** HTTPS-**proxy** TLS omits `proxyTls` (hardening; parity-vs-axios unverified); `EnvHttpProxyAgent` ignores `ALL_PROXY`; `proxy` schema requires host+port & rejects unknown keys (**benign — published `index.d.ts` already required host+port**); fetch redirect cap 20 vs axios 21 (extreme edge).
 - **Not regressions / arguably improvements:** `httpTimeout` bounding the body read matches axios's whole-response timeout (immaterial for a readiness check); password-only `auth` now sends no header instead of a malformed `Basic :pw`; `false`/`null` header values stringify (number/boolean coerce fine). See below.
 
@@ -100,7 +102,7 @@ Severity-ranked, reconciled across both model reviews. "R" = reproduced by execu
 ### Not regressions / arguably improvements (info)
 
 - **`httpTimeout` bounds the body read** (L450-457, under `AbortSignal.any([teardown, timeout])`). Matches axios's whole-response `timeout`; immaterial for a readiness check (body discarded). No hang risk (unset → teardown-only signal). Second reviewer rated this parity.
-- **Password-only `auth`** (L416, `auth.username != null`) now sends **no** header where axios sent a malformed `Basic base64(':pw')`. New behavior is more correct; nothing relies on the old header.
+- **Password-only `auth`** — now **fixed to axios parity** (B2): builds `Basic base64(':pw')` (each side defaults to `''`), rather than sending no header. (Earlier this was flagged as "arguably more correct to omit"; reconciled to strict axios parity per the "no exceptions" goal.)
 - **Non-string header values** (L415): axios omitted `null`/`undefined`/`false`; undici stringifies them. `number`/`boolean` coerce fine (probed `8080`/`true`). The widened `headers?: Record<string,string|number|boolean>` makes these typed values. Minor; drop `null`/`undefined`/`false` before fetch if exact omission is wanted.
 - **Pre-existing:** `index.d.ts extends SecureContextOptions` advertises TLS fields (e.g. `ciphers`) as "type-check but ignored," but the joi schema rejects them at runtime (`"ciphers" is not allowed`) — true on `master` too, not a #238 regression.
 
@@ -120,4 +122,15 @@ Severity-ranked, reconciled across both model reviews. "R" = reproduced by execu
 
 ## Bottom line
 
-PR #238 ships a **superset of the pre-refactor types** (no narrowing, no axios types) and is at **full parity on the documented/typed config surface** — confirmed by two independent model reviews (one returned "100% parity, ship-ready") plus `npm test` (174 passing). The one item standing between it and literal "100%, no exceptions" is **B1** (proxy sync-throw — a contract-violation bug, reproduced; fix first). **B2** (auth/`Authorization` header collision) is a low-severity contradictory-config edge. The rest are narrow/benign (HTTPS-proxy `proxyTls`, `ALL_PROXY`, proxy schema, redirect cap) or arguably improvements (httpTimeout body scope, partial-auth, header sentinels); **I1** (engines) is intended and correctly flagged breaking. With **B1** fixed (and optionally **B2**), the "100%, no exceptions" claim holds. Tracked in the hardening plan: `docs/plans/2026-09-29-1030-refactor-harden-axios-fetch-parity-plan.md`.
+PR #238 ships a **superset of the pre-refactor types** (no narrowing, no axios types) and is at **full parity on the documented/typed config surface** — confirmed by two independent model reviews (one returned "100% parity, ship-ready") plus `npm test`. **B1 and B2 are now fixed** (commit `69e380f`, 192 passing). Remaining items are narrow/benign (HTTPS-proxy `proxyTls`, `ALL_PROXY`, proxy schema, redirect cap) or arguably improvements now reconciled to axios (partial-auth) — none block the common path; **I1** (engines) is intended and correctly flagged breaking. With B1/B2 landed, the documented config surface has no known parity exceptions. Hardening plan: `docs/plans/2026-09-29-1030-refactor-harden-axios-fetch-parity-plan.md`.
+
+## Fixes applied (commit `69e380f`)
+
+| Fix | Change (`lib/wait-on.js`) | Tests (`test/https-proxy.mocha.js`) |
+|---|---|---|
+| **B1** URL normalize | `buildDispatcher`: bracket bare IPv6 host, strip trailing `:` from `protocol` | IPv6 bare / bracketed / expanded / with-creds; protocol `http:` / `https:` / `http` — each asserts a valid URL by reaching the timeout (not `Invalid URL`) |
+| **B1** guard | `createHTTP$`: wrap dispatcher build in try/catch → `throwError` (error via callback) | unparseable host (`'bad host'`) → error via callback, no sync throw |
+| **B2** override | `auth` strips any case-variant `Authorization` from headers before setting Basic | override across `Authorization`/`authorization`/`AUTHORIZATION`/mixed-case; passthrough when no auth |
+| **B2** partial creds | build Basic for partial/empty `auth`, each side `?? ''` (axios parity) | username+password, password-only, username-only, empty `{}`; no-auth sends no header |
+
+Result: `npm test` **192 passing** (was 174). Partial-auth is now axios-exact (`Basic base64(':p')`), superseding the earlier "no header / more correct" note.

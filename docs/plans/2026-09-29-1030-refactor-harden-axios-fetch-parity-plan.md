@@ -28,6 +28,8 @@ review_source: docs/reviews/2026-09-29-pr238-axios-fetch-parity.md
 PR #238 replaced axios with native `fetch` + an `undici` dispatcher. A parity audit (`docs/reviews/2026-09-29-pr238-axios-fetch-parity.md`) reconciling **two independent model reviews** + repros found the documented/typed config surface fully at parity and tested; one reproduced bug and a small set of narrow/benign edges remain. This plan hardens the HTTP config translation so the parity claim holds without exceptions, adds the missing per-option and differential tests, and records the stacked-PR merge order for the trains that sit on top of #238.
 
 > **Reconciled IDs (this plan predates the second review).** The review's canonical IDs: **B1** = proxy sync-throw (was H1, the one bug to fix), **B2** = `auth`/capital-`Authorization` header collision (new, low). The former H2/M1/M2/M3/L-series are downgraded to narrow/benign or info in the review; this plan still covers them all under the requirements below — treat their priority as: B1 first, then B2, then the narrow edges as decided by the owner.
+>
+> **STATUS (commit `69e380f`): B1 and B2 DONE** — proxy URL normalization (IPv6 bracketing, protocol-colon strip) + construction guard, and `auth` case-insensitive `Authorization` override + partial-creds parity, all with full scenario tests (R1, R6-partial, R7 satisfied; 192 passing). Remaining owner decisions: H2 `proxyTls`, M1 `ALL_PROXY`, M2 proxy schema, L1 redirect cap.
 
 ### Problem Frame
 
