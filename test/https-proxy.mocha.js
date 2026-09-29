@@ -281,6 +281,21 @@ describe('https/tls and proxy parity', function () {
   it('should send no Authorization header when neither auth nor a header is set',
     seenAuthFor({}, (seen) => expect(seen).to.equal(undefined)));
 
+  it('should keep other custom headers while opts.auth sets Authorization', function (done) {
+    let seen;
+    listenHttp((req, res) => { seen = req.headers; res.statusCode = 200; res.end('ok'); }, function (port) {
+      waitOn(
+        { resources: [`http://localhost:${port}/`], headers: { 'X-Custom': 'keep', Authorization: 'Bearer OLD' }, auth: { username: 'u', password: 'p' }, ...FAST },
+        function (err) {
+          expect(err).to.not.be.ok;
+          expect(seen['x-custom']).to.equal('keep'); // non-authorization header survives the strip loop
+          expect(seen.authorization).to.equal('Basic ' + Buffer.from('u:p').toString('base64')); // auth still wins
+          done();
+        }
+      );
+    });
+  });
+
   // ---- validateStatus over real HTTP (fetch decides success after the response) ----
   // fetch never rejects on status, so success is decided by validateStatus (default 2xx).
   // These exercise that decision end-to-end over HTTP for HEAD and GET.
