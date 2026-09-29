@@ -2,14 +2,20 @@
 
 import { SecureContextOptions } from 'tls';
 
-declare function waitOn(opts: waitOn.WaitOnInput, cb: (err: Error | null) => void): void;
+declare function waitOn(opts: waitOn.WaitOnInput, cb: (err?: Error) => void): void;
 declare function waitOn(opts: waitOn.WaitOnInput): Promise<void>;
 
 declare namespace waitOn {
   /** A resources string (or array of them) may be passed directly as shorthand for `{ resources: [...] }`. */
   type WaitOnInput = WaitOnOptions | string | string[];
 
-  interface WaitOnOptions extends Pick<SecureContextOptions, 'ca' | 'cert' | 'key' | 'passphrase'> {
+  /**
+   * Extends the full Node `SecureContextOptions` for `@types/wait-on` source
+   * compatibility. Only `ca`, `cert`, `key`, and `passphrase` are read at
+   * runtime (passed to the https agent); other TLS fields type-check but are
+   * ignored.
+   */
+  interface WaitOnOptions extends SecureContextOptions {
     /** Array of resources to wait for. Prefix determines type: file:, http:, https:, http-get:, https-get:, tcp:, socket:, command: */
     resources: string[];
     /** Initial delay in ms before polling begins. @default 0 */
@@ -45,8 +51,12 @@ declare namespace waitOn {
     strictSSL?: boolean;
     /** Follow HTTP 3xx redirects. @default true */
     followRedirect?: boolean;
-    /** Additional HTTP request headers. */
-    headers?: Record<string, string>;
+    /**
+     * Additional HTTP request headers. Values may be strings, numbers, or
+     * booleans (as `@types/wait-on` and the runtime accept); they are passed
+     * through to the http client.
+     */
+    headers?: Record<string, string | number | boolean>;
   }
 
   interface WaitOnAuth {
@@ -66,6 +76,18 @@ declare namespace waitOn {
   }
 
   type ValidateStatus = (status: number) => boolean;
+
+  /** @deprecated use {@link WaitOnProxyOptions}. Kept for `@types/wait-on` compatibility. */
+  type AxiosProxyConfig = WaitOnProxyOptions;
+
+  /**
+   * @deprecated Not used at runtime. Kept only for `@types/wait-on`
+   * compatibility so existing consumers referencing this name keep compiling.
+   */
+  interface HttpSignature {
+    keyId: string;
+    key: string;
+  }
 }
 
 export = waitOn;

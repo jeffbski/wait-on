@@ -825,6 +825,36 @@ describe('api', function () {
     });
   });
 
+  // #250: the success callback must receive `err === undefined` (strictly, never
+  // null), which pins the `(err?: Error) => void` type in index.d.ts to real behavior.
+  it('should invoke the callback with err === undefined (not null) on success (#250)', function (done) {
+    temp.mkdir({}, function (mkErr, dirPath) {
+      if (mkErr) return done(mkErr);
+      const opts = { resources: [path.resolve(dirPath, 'foo')] };
+      fs.writeFileSync(opts.resources[0], 'data1');
+      waitOn(opts, function (err) {
+        expect(err).to.equal(undefined);
+        expect(err).to.not.equal(null);
+        done();
+      });
+    });
+  });
+
+  it('should invoke the callback with err === undefined (not null) on reverse-mode success (#250)', function (done) {
+    temp.mkdir({}, function (mkErr, dirPath) {
+      if (mkErr) return done(mkErr);
+      const opts = {
+        resources: [path.resolve(dirPath, 'foo'), path.resolve(dirPath, 'bar')],
+        reverse: true
+      };
+      waitOn(opts, function (err) {
+        expect(err).to.equal(undefined);
+        expect(err).to.not.equal(null);
+        done();
+      });
+    });
+  });
+
   it('should timeout when file resources are available in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
