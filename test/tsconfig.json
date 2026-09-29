@@ -8,5 +8,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["types.test-d.ts", "../index.d.ts"]
+  "include": ["types.test-d.ts", "types-compat/dt-wait-on-tests.ts", "../index.d.ts"]
 }
