@@ -280,4 +280,58 @@ describe('https/tls and proxy parity', function () {
 
   it('should send no Authorization header when neither auth nor a header is set',
     seenAuthFor({}, (seen) => expect(seen).to.equal(undefined)));
+
+  // ---- validateStatus over real HTTP (fetch decides success after the response) ----
+  // fetch never rejects on status, so success is decided by validateStatus (default 2xx).
+  // These exercise that decision end-to-end over HTTP for HEAD and GET.
+  function statusServer(code) {
+    return function (cb) {
+      listenHttp((req, res) => { res.statusCode = code; res.end('x'); }, cb);
+    };
+  }
+
+  it('should succeed on a non-2xx when validateStatus accepts it (HEAD)', function (done) {
+    statusServer(404)(function (port) {
+      waitOn({ resources: [`http://localhost:${port}/`], validateStatus: (s) => s === 404, ...FAST }, function (err) {
+        expect(err).to.not.be.ok;
+        done();
+      });
+    });
+  });
+
+  it('should succeed on a non-2xx when validateStatus accepts it (GET)', function (done) {
+    statusServer(404)(function (port) {
+      waitOn({ resources: [`http-get://localhost:${port}/`], validateStatus: (s) => s === 404, ...FAST }, function (err) {
+        expect(err).to.not.be.ok;
+        done();
+      });
+    });
+  });
+
+  it('should fail a 2xx when validateStatus rejects it', function (done) {
+    statusServer(200)(function (port) {
+      waitOn({ resources: [`http://localhost:${port}/`], validateStatus: (s) => s === 500, timeout: 600, interval: 100, window: 100 }, function (err) {
+        expect(err).to.be.ok; // 200 not accepted -> never ready -> timeout
+        done();
+      });
+    });
+  });
+
+  it('should fail a non-2xx by default (no validateStatus)', function (done) {
+    statusServer(404)(function (port) {
+      waitOn({ resources: [`http://localhost:${port}/`], timeout: 600, interval: 100, window: 100 }, function (err) {
+        expect(err).to.be.ok; // default 2xx check rejects 404
+        done();
+      });
+    });
+  });
+
+  it('should succeed on 204 by default (2xx boundary)', function (done) {
+    statusServer(204)(function (port) {
+      waitOn({ resources: [`http://localhost:${port}/`], ...FAST }, function (err) {
+        expect(err).to.not.be.ok;
+        done();
+      });
+    });
+  });
 });
