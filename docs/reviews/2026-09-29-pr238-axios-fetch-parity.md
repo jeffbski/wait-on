@@ -118,7 +118,10 @@ Severity-ranked, reconciled across both model reviews. "R" = reproduced by execu
 - `test/https-proxy.mocha.js` — strictSSL true/false, matching `ca`, unix-socket (short+absolute), `HTTP_PROXY` not routed for unix, Basic auth header, explicit proxy object, `proxy:false` direct, malformed-proxy-as-callback-error.
 - `test/api.mocha.js` — redirect follow (default) + "timeout when followRedirect is false and redirects".
 - `test/cli.mocha.js` — `parseStatusCodes` / `--status-codes` → `validateStatus`.
+- `test/https-proxy.mocha.js` — `validateStatus` over real HTTP (accept non-2xx via HEAD+GET, reject 2xx, default rejects 404, 204 boundary); B1 proxy-URL normalization (IPv6 + protocol) + construction guard; B2 auth override across header casings + partial/empty auth + passthrough.
 - `test/types-compat/dt-wait-on-tests.ts` + `test/types.test-d.ts` — `@types/wait-on` compat compile.
+
+`npm test` now **197 passing** (was 174) after the B1/B2 fixes and added coverage.
 
 ## Bottom line
 
