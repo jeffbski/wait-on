@@ -752,6 +752,101 @@ describe('cli', function () {
     });
   });
 
+  context('status codes (--status-codes, #187, #49)', () => {
+    // start a server answering every request with `status`, then run the CLI
+    function runAgainst(status, port, args, onExit) {
+      httpServer = http.createServer().on('request', function (req, res) {
+        res.statusCode = status;
+        res.end('data');
+      });
+      httpServer.listen(port, 'localhost', function () {
+        let stderr = '';
+        const child = execCLI(args.concat(FAST_OPTS), {});
+        child.stderr.on('data', function (data) {
+          stderr += data.toString();
+        });
+        child.on('exit', function (code) {
+          onExit(code, stderr);
+        });
+      });
+    }
+
+    it('succeeds on a 404 when the range includes it', function (done) {
+      runAgainst(404, 8140, ['http://localhost:8140', '--status-codes', '200-499'], function (code) {
+        expect(code).to.equal(0);
+        done();
+      });
+    });
+
+    it('succeeds on a 404 when it is listed as a single code', function (done) {
+      runAgainst(404, 8141, ['http://localhost:8141', '--status-codes', '404'], function (code) {
+        expect(code).to.equal(0);
+        done();
+      });
+    });
+
+    it('times out on a 500 outside the accepted range', function (done) {
+      runAgainst(500, 8142, ['http://localhost:8142', '--status-codes', '200-499'], function (code) {
+        expect(code).to.not.equal(0);
+        done();
+      });
+    });
+
+    it('times out on a 200 when 2XX is not listed', function (done) {
+      runAgainst(200, 8143, ['http://localhost:8143', '--status-codes', '404'], function (code) {
+        expect(code).to.not.equal(0);
+        done();
+      });
+    });
+
+    it('applies to http-get resources', function (done) {
+      runAgainst(404, 8144, ['http-get://localhost:8144', '--status-codes', '404'], function (code) {
+        expect(code).to.equal(0);
+        done();
+      });
+    });
+
+    it('overrides a config-file validateStatus', function (done) {
+      runAgainst(
+        404,
+        8145,
+        ['--config', path.join(__dirname, 'config-status-codes.js'), 'http://localhost:8145', '--status-codes', '404'],
+        function (code) {
+          expect(code).to.equal(0);
+          done();
+        }
+      );
+    });
+
+    it('inverts the accepted set in reverse mode', function (done) {
+      runAgainst(404, 8146, ['http://localhost:8146', '-r', '--status-codes', '404'], function (code) {
+        expect(code).to.not.equal(0);
+        done();
+      });
+    });
+
+    [
+      { args: ['--status-codes', '499-200'], expected: '499-200' },
+      { args: ['--status-codes', 'abc'], expected: 'abc' },
+      { args: ['--status-codes='], expected: 'status-codes' },
+      { args: ['--status-codes'], expected: 'status-codes' } // bare trailing flag
+    ].forEach(function (row) {
+      it('exits non-zero with a message for `' + row.args.join(' ') + '`', function (done) {
+        let stderr = '';
+        // no server needed: the value is rejected before any request
+        const child = execCLI(['http://localhost:8147'].concat(FAST_OPTS, row.args), {});
+        child.stderr.on('data', function (data) {
+          stderr += data.toString();
+        });
+        child.on('exit', function (code) {
+          expect(code).to.not.equal(0);
+          expect(stderr).to.have.string(row.expected);
+          done();
+        });
+      });
+    });
+  });
+
   describe('command (#87, #15, #71)', function () {
     // node is used instead of a shell builtin so these run identically on every OS in CI
     const PASS = 'command:node -e "process.exit(0)"';
@@ -826,6 +921,7 @@ describe('cli parseArgv', function () {
     { args: ['--window', '750'], key: 'window', value: '750' },
     { args: ['--httpTimeout', '70ms'], key: 'httpTimeout', value: '70ms' },
     { args: ['--tcpTimeout', '300'], key: 'tcpTimeout', value: '300' },
+    { args: ['--status-codes', '200-499'], key: 'status-codes', value: '200-499' },
     { args: ['-l'], key: 'log', value: true },
     { args: ['--log'], key: 'log', value: true },
     { args: ['-r'], key: 'reverse', value: true },
@@ -864,6 +960,12 @@ describe('cli parseArgv', function () {
     expect(parsed.resources).to.deep.equal([RES]);
   });
 
+  it('keeps the last value of a repeated --status-codes', function () {
+    const parsed = parseArgv(['--status-codes', '404', '--status-codes', '500', RES]);
+    expect(parsed.argv['status-codes']).to.equal('500');
+    expect(parsed.resources).to.deep.equal([RES]);
+  });
+
   it('collects multiple positionals as resources', function () {
     const parsed = parseArgv(['file:a', 'file:b', '-l']);
     expect(parsed.resources).to.deep.equal(['file:a', 'file:b']);
@@ -895,5 +997,44 @@ describe('cli parseHeaders', function () {
     expect(function () {
       parseHeaders([': value']);
     }).to.throw();
+  });
+});
+
+describe('cli parseStatusCodes', function () {
+  const { parseStatusCodes } = require(CLI_PATH);
+
+  it('accepts a single code', function () {
+    const accept = parseStatusCodes('404');
+    expect([404, 200, 500].map(accept)).to.deep.equal([true, false, false]);
+  });
+
+  it('accepts an inclusive range', function () {
+    const accept = parseStatusCodes('200-499');
+    expect([200, 404, 499, 199, 500].map(accept)).to.deep.equal([true, true, true, false, false]);
+  });
+
+  it('accepts a comma list of codes and ranges, ignoring whitespace', function () {
+    const accept = parseStatusCodes(' 200 , 404-405 ');
+    expect([200, 404, 405, 201, 406].map(accept)).to.deep.equal([true, true, true, false, false]);
+  });
+
+  ['abc', '2xx', '600', '99', '499-200', '200,,204', '', '200-'].forEach(function (value) {
+    it('throws, naming the entry, for `' + value + '`', function () {
+      expect(function () {
+        parseStatusCodes(value);
+      }).to.throw(/--status-codes/);
+    });
+  });
+
+  it('names the offending entry in the message', function () {
+    expect(function () {
+      parseStatusCodes('200,499-200');
+    }).to.throw(/"499-200"/);
+  });
+
+  it('throws when the flag has no value (bare --status-codes parses to true)', function () {
+    expect(function () {
+      parseStatusCodes(true);
+    }).to.throw(/--status-codes requires a value/);
   });
 });

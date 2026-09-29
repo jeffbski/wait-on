@@ -46,6 +46,14 @@ Standard Options:
   headers on a name conflict.
   ex: -H "Authorization: Bearer TOKEN" -H "x-custom: 1"
 
+ --status-codes
+
+  HTTP status codes that count as success for http(s) resources, instead
+  of the default 2XX. A code, an inclusive range, or a comma-separated
+  list of both. Overrides a config-file validateStatus. If repeated, the
+  last value wins.
+  ex: --status-codes 200-499 or --status-codes 200,204,404
+
  -d, --delay
 
   Initial delay before checking for resources in ms, default 0
