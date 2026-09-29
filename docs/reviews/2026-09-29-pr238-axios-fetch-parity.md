@@ -1,7 +1,7 @@
 # PR #238 — axios → fetch/undici: feature & config parity confirmation
 
 **PR:** jeffbski/wait-on#238 — `refactor!: replace axios with native fetch and undici (Node >=22.19)`
-**Branch:** `refactor/axios-to-fetch` (rebased onto `upstream/master` @ `2f052a2`)
+**Branch:** `refactor/axios-to-fetch` (rebased onto `upstream/master` @ `9b8c532`, incl. #254 dep upgrades → 9.5.1: eslint 10, mocha 12, @types/node 26, typescript 7)
 **Reviewed diff base:** `upstream/master...HEAD`
 **Date:** 2026-09-29
 **Method:** option-by-option comparison of the old axios path (`upstream/master:lib/wait-on.js`) vs the new fetch/undici path (`lib/wait-on.js`), the joi `WAIT_ON_SCHEMA`, `index.d.ts`, the vendored `@types/wait-on` consumer test (`test/types-compat/dt-wait-on-tests.ts`), and the runtime parity suite (`test/https-proxy.mocha.js`). Independent second read by a different model (codex) + a separate local reviewer.

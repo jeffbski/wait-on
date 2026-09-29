@@ -97,7 +97,7 @@ All of #239–#246 contain #238's `refactor!` commit — they are a **linear sta
 |---|---|---|---|---|
 | 1 | **#238** axios→fetch | fetch/undici refactor | rebased clean onto master (index.d.ts auto-merged to master's superset) | this branch; land H1/H2 before/with it |
 | 2 | **#239** drop-lodash | native replacements in `lib/wait-on.js` | low — its diff is relative to #238's `pick`/`partial`; replays on new #238 | removes `lodash` from deps |
-| 3 | **#240** devdeps | eslint 10, mocha 12 | **med** — `package.json` devDeps + `package-lock` vs master (eslint 9/mocha 11); run `npm i`; fix any eslint-10 lint | lands before the test lane so 243–246 target eslint 10 |
+| 3 | **#240** devdeps | eslint 10, mocha 12 | **LIKELY OBSOLETE** — upstream #254 (merged 2026-09-29, master `9b8c532`) already bumped eslint 10, mocha 12, @types/node 26, typescript 7, +globals. Now largely subsumed; close #240 or reduce to any residual beyond #254 | reassess before rebasing |
 | 4 | **#243** freeze-clock | `test/frozen-clock.js`, `.mocharc.json`, api tests | **med** — `test/api.mocha.js` three-way (238 +11, master #252 tweak, freeze-clock hunks) | keep mocha `--exit` in `.mocharc.json` |
 | 5 | **#244** coverage-bin | `.nycrc.json`, coverage test, bin instrument | **med** — `bin/wait-on` now has #253 `--status-codes`; coverage numbers/branches shift | `.nycrc extension:""` instruments extensionless `bin/wait-on` |
 | 6 | **#245** parser-properties | parser property tests | low-med — `bin/wait-on` 2-line vs #253; add `parseStatusCodes` property coverage | new master parser exists post-rebase |
