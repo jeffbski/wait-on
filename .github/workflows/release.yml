@@ -1,15 +1,17 @@
 # Release automation, modeled on semantic-release's own release.yml.
 # semantic-release computes the version and GitHub release notes from Conventional Commits,
-# publishes to npm (OIDC trusted publishing + provenance), and commits the version back to master.
+# publishes to npm (OIDC trusted publishing + provenance), and commits the version back to the branch.
+# Branches: master -> dist-tag latest; next -> 10.0.0-rc.N prereleases on dist-tag next; maintenance
+# branches such as 9.x -> dist-tag release-9.x. See .releaserc.json and .github/RELEASING.md.
 #
 # Human in the loop: the `release` job runs in the GitHub Environment `release`, which has required
-# reviewers. Every push to master queues a run that waits for approval. Remove the environment's
+# reviewers. Every push to a release branch queues a run that waits for approval. Remove the environment's
 # required reviewers to make releases fully automatic — no code change. See .github/RELEASING.md.
 name: Release
 
 on:
   push:
-    branches: [master]
+    branches: [master, next, '*.x']
 
 # One release at a time; never drop a queued release (KTD1/KTD11).
 concurrency:
@@ -67,7 +69,7 @@ jobs:
             --dry-run \
             --plugins @semantic-release/commit-analyzer @semantic-release/release-notes-generator \
             > preview.log 2>&1 || true
-          version="$(grep -oE 'The next release version is [0-9]+\.[0-9]+\.[0-9]+' preview.log | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | tail -1 || true)"
+          version="$(grep -oE 'The next release version is [0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?' preview.log | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?' | tail -1 || true)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           {
             if [ -n "$version" ]; then
