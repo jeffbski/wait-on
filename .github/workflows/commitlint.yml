@@ -4,7 +4,7 @@ name: Commitlint
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, next, '*.x']
 
 permissions:
   contents: read
