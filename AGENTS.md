@@ -78,9 +78,8 @@ has syntax worth failing fast on.
 - CommonJS throughout; keep it (no ESM, no build step).
 - Tests: mocha + chai, files `test/*.mocha.js` (`api.mocha.js`, `cli.mocha.js`,
   `validation.mocha.js`); shared fixtures `test/config-http-resources.js` and
-  `test/config-headers.js`. A bug fix starts with a failing test that reproduces it.
-- Time-dependent tests run on a frozen/fake clock. The pipeline is timer-driven; never
-  assert against the real wall clock.
+  `test/config-headers.js`. How to write them: see
+  [Test-Driven Development](#test-driven-development-mandatory).
 - CI runs on **ubuntu + windows** (matrix node 20/22/24, `npm ci --engine-strict`). No
   POSIX-only assumptions: mind Windows named pipes and path separators, and don't rely on
   unix-only tooling (e.g. `openssl speed`) or shell.
@@ -89,6 +88,112 @@ has syntax worth failing fast on.
 - `.npmignore` hygiene: exclude new top-level dev/tooling files from the published package.
 - CLI headers: `-H` / `--header "Name: value"` is repeatable and merges with config-file
   headers, CLI winning on conflict (#234).
+
+## Test-Driven Development (Mandatory)
+
+**All executable code is written test-first. No exceptions.** That covers `lib/`, `bin/`,
+`index.d.ts`, scripts, test helpers, and configuration, tooling, and CI changes; "trivial",
+"just wiring", and "just a rename" are not exemptions. The one carve-out is docs-only
+edits (`README.md`, `AGENTS.md`, `docs/**`), which have no behavior to test. Where a mocha
+test cannot go red, RED is the nearest failing check: a type test in `test/types.test-d.ts`
+(`npm run test:types`) for `index.d.ts`, or a command observed failing before the change
+(`npm test`, `npm pack --dry-run` output) for config, tooling, and CI.
+
+Why this is strict: #238 (axios → undici) named its riskiest assumption in the plan and
+verified it in prose. The env-proxy branch dropped `strictSSL`/`ca`/`cert` for HTTPS
+targets, and no test combined HTTPS target × env proxy × TLS option. A reviewer found it.
+
+### The cycle
+
+1. **RED** — write one failing test for the next behavioral increment in the matching file
+   (API → `test/api.mocha.js`, CLI → `test/cli.mocha.js`, schema and resource syntax →
+   `test/validation.mocha.js`). Run it (`npm run test:mocha -- --grep "<name>"`).
+2. **Right reason** — read the failure. It counts as red only when it fails on the
+   assertion that describes the missing behavior, not on a typo, missing fixture, port
+   collision, or a timeout from a broken harness. A test that passes on first run is
+   investigated before any code is written.
+3. **GREEN** — the minimum code that passes. Nothing the test does not demand.
+4. **Full suite** — `npm test` (lint + types + mocha), not just the new test.
+5. **REFACTOR** — on green only; rerun after each change.
+6. **Repeat** per increment. Test and code land in the same commit.
+
+### Rules
+
+- **Bugs start as a failing reproduction** at the layer where the bug shows (API test for
+  `lib/`, subprocess CLI test for `bin/`), including reviewer- and user-reported defects.
+  After GREEN, temporarily undo the fix and confirm the test fails with the reported error.
+- **Named risks become failing tests.** Every plan risk, Outstanding Question, or "verify X"
+  step names the test that answers it, and that test is written before the code it guards.
+  A prose verification step does not count. When the risk concerns one branch of a dispatch
+  (below), its test runs on every sibling branch sharing the mechanism at risk, unless the
+  plan records a reasoned carve-out. Plan authors: an Outstanding Question without a named
+  test is incomplete.
+- **Every branch of a selection or dispatch function has a test**: the `createResource$`
+  prefix switch, `validateResource`, any function that picks an agent or dispatcher by
+  option. Adding a branch adds its test.
+- **Input combinations are a matrix.** When a change touches how two or more inputs interact
+  (options, resource scheme such as http vs https, environment such as
+  `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY`), the plan enumerates the matrix and each reachable
+  cell gets a test or a reasoned carve-out. Testing each input alone does not cover the
+  combination.
+- **Prove the path ran.** A test of a routed or conditional path asserts that the path was
+  taken (the stub proxy counted a CONNECT tunnel, the socket server saw the request), not
+  only the final outcome. Otherwise it can pass through a fallback.
+- **Coverage is a signal, not proof.** Full line and branch coverage from
+  `npm run test:coverage` can still miss a matrix cell.
+- **Test behavior at the front doors**: what `waitOn` resolves or rejects with, and the CLI's
+  exit code, stdout, and stderr. Behavior reachable from both gets a test at both. Use real
+  servers, sockets, and files; stub only the network edge, with local servers. Name tests
+  for behavior: `it('should succeed when ...')`.
+- **Self-contained tests**: ephemeral ports (`listen(0)`), temp paths, skip (don't fail)
+  when a tool such as `openssl` is missing. Platform rules are in Conventions (CI bullet).
+  Windows delete-pending flakes are fixed with test headroom and retry, not `lib/` changes.
+- **Clock.** Timing-dependent tests use a fake clock that virtualizes rxjs scheduling and
+  freezes `Date`, leaving global timers real (network teardown needs them; node:test
+  `mock.timers` breaks rxjs intervals on Node 22.19). Only fixed-state tests freeze. Tests
+  whose resource changes on a real `setTimeout`, and CLI subprocess tests, stay on the real
+  clock with generous headroom. This is a deliberate wait-on exception to any
+  freeze-the-clock-globally rule: do not convert real-clock tests.
+
+### Anti-patterns
+
+- Writing all the tests first, then all the code.
+- Over-implementing on GREEN (the complete, optimized solution instead of what the test demands).
+- Mirror tests that recompute the expected value with the production logic; use concrete values.
+- Skipping RED verification: writing test and code together, never seeing the failure.
+- Mocking wait-on's own modules or rxjs instead of testing through `waitOn` or the CLI.
+- Leaving `.only`, `.skip`, or a disabled test in the diff.
+
+## Compounding Knowledge (Mandatory)
+
+**Do not leave context trapped in a session.** After any non-trivial fix, architectural
+decision, or pattern discovery, run `/ce-compound` (`compound-engineering:ce-compound`). It
+writes the problem, what worked, and what failed to `docs/solutions/` (new doc or update),
+so the next session reads it instead of rediscovering it. The overdrive block's "compounding
+loop" below describes the loop; this section makes it mandatory.
+
+- **When:** once per plan at close, before the shipping PR opens, so the `docs/solutions/`
+  change lands in the same PR; and mid-execution whenever a pattern the plan did not
+  anticipate appears.
+- **Mode:** headless runs (`/lfg` and other unattended runs) use
+  `/ce-compound mode:non-interactive`; interactive sessions may run it bare. A close-out run
+  uses `mode:non-interactive` so it ends on a parseable result.
+- **Never skip the invocation.** This overrides any skill's conditional compound step
+  (e.g. `/lfg`'s). The skill decides whether anything qualifies, not the agent. When nothing
+  qualified, only that run's own skip report (`Documentation skipped` with its reason)
+  satisfies the item.
+- **Plans carry it as Definition of Done.** Every `ce-unified-plan/v1` plan dated on or after
+  2026-09-29 includes this bullet verbatim in `## Definition of Done` (earlier plans are
+  grandfathered). Doc-review and simplification passes must not strip or soften it; it is a
+  completion criterion, same class as "tests green".
+
+  ```markdown
+  - Run `/ce-compound` (`mode:non-interactive` when no human is present) for each non-trivial learning this work produced — new or updated `docs/solutions/` doc in the same PR; never skip the invocation — only that run's own skip report (reason recorded in the PR's Compounding line) satisfies this item when nothing qualified.
+  ```
+
+- **PRs attest the outcome.** Every plan-backed PR body carries a `### Compounding` line: the
+  `docs/solutions/` path(s) written or updated, or `Documentation skipped: <reason>` copied
+  from the skill's report.
 
 ## What not to do
 
