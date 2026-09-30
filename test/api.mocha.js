@@ -7,6 +7,7 @@ const net = require('net');
 const path = require('path');
 const temp = require('temp');
 const mkdirp = require('mkdirp');
+const { itFrozen } = require('./frozen-clock');
 
 const mocha = require('mocha');
 const describe = mocha.describe;
@@ -28,13 +29,22 @@ describe('api', function () {
 
   afterEach(function (done) {
     if (httpServer) {
-      httpServer.close();
+      const server = httpServer;
       httpServer = null;
+      // Force keep-alive client connections closed and wait for the port to actually be
+      // released before the next test binds it. Frozen tests finish in milliseconds, so the
+      // old fire-and-forget close() could leave the port bound when the next same-port test
+      // ran; the real timeouts used to mask this by giving the socket time to drain.
+      server.closeAllConnections();
+      server.close(function () {
+        done();
+      });
+    } else {
+      done();
     }
-    done();
   });
 
-  it('should succeed when file resources are available', function (done) {
+  itFrozen('should succeed when file resources are available', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -175,7 +185,7 @@ describe('api', function () {
   });
 
   /*
-  it('should succeed when an https resource is available', function (done) {
+  itFrozen('should succeed when an https resource is available', function (done) {
     const opts = {
       resources: [
         'https://www.google.com'
@@ -188,7 +198,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when an https GET resource is available', function (done) {
+  itFrozen('should succeed when an https GET resource is available', function (done) {
     const opts = {
       resources: [
         'https-get://www.google.com'
@@ -471,7 +481,7 @@ describe('api', function () {
 
   // Error situations
 
-  it('should timeout when all resources are not available and timout option is specified', function (done) {
+  itFrozen('should timeout when all resources are not available and timout option is specified', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -485,7 +495,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when some resources are not available and timout option is specified', function (done) {
+  itFrozen('should timeout when some resources are not available and timout option is specified', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -522,7 +532,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http resource is not available', function (done) {
+  itFrozen('should timeout when an http resource is not available', function (done) {
     const opts = {
       resources: ['http://localhost:3010'],
       timeout: 1000,
@@ -559,7 +569,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when followRedirect is false and http resource redirects', function (done) {
+  itFrozen('should timeout when followRedirect is false and http resource redirects', function (done) {
     const opts = {
       timeout: 1000,
       interval: 100,
@@ -583,7 +593,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http GET resource is not available', function (done) {
+  itFrozen('should timeout when an http GET resource is not available', function (done) {
     const opts = {
       resources: ['http-get://localhost:3010'],
       timeout: 1000,
@@ -597,7 +607,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an https resource is not available', function (done) {
+  itFrozen('should timeout when an https resource is not available', function (done) {
     const opts = {
       resources: ['https://localhost:3010/foo/bar'],
       timeout: 1000,
@@ -611,7 +621,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an https GET resource is not available', function (done) {
+  itFrozen('should timeout when an https GET resource is not available', function (done) {
     const opts = {
       resources: ['https-get://localhost:3010/foo/bar'],
       timeout: 1000,
@@ -625,7 +635,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when followRedirect is false and http GET resource redirects', function (done) {
+  itFrozen('should timeout when followRedirect is false and http GET resource redirects', function (done) {
     const opts = {
       timeout: 1000,
       interval: 100,
@@ -649,7 +659,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when a service is not listening to tcp port', function (done) {
+  itFrozen('should timeout when a service is not listening to tcp port', function (done) {
     const opts = {
       resources: ['tcp:localhost:3010'],
       timeout: 1000
@@ -661,7 +671,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when a service is not listening to a socket', function (done) {
+  itFrozen('should timeout when a service is not listening to a socket', function (done) {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -706,7 +716,7 @@ describe('api', function () {
     });
   });
 
-  it('should log timeout error when log is enabled', function (done) {
+  itFrozen('should log timeout error when log is enabled', function (done) {
     const opts = {
       resources: ['file:/non/existent/file/path'],
       timeout: 500,
@@ -747,7 +757,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when an http service listening to a socket is too slow', function (done) {
+  itFrozen('should timeout when an http service listening to a socket is too slow', function (done) {
     let socketPath;
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
@@ -791,7 +801,7 @@ describe('api', function () {
     });
   });
 
-  it('should succeed when file resources are not available in reverse mode', function (done) {
+  itFrozen('should succeed when file resources are not available in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -862,7 +872,7 @@ describe('api', function () {
     });
   });
 
-  it('should timeout when file resources are available in reverse mode', function (done) {
+  itFrozen('should timeout when file resources are available in reverse mode', function (done) {
     temp.mkdir({}, function (err, dirPath) {
       if (err) return done(err);
       const opts = {
@@ -880,7 +890,7 @@ describe('api', function () {
   });
 
   describe('promise support', function () {
-    it('should succeed when file resources are available', function (done) {
+    itFrozen('should succeed when file resources are available', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -920,7 +930,7 @@ describe('api', function () {
       });
     });
 
-    it('should timeout when all resources are not available and timout option is specified', function (done) {
+    itFrozen('should timeout when all resources are not available and timout option is specified', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -938,7 +948,7 @@ describe('api', function () {
       });
     });
 
-    it('should timeout when some resources are not available and timout option is specified', function (done) {
+    itFrozen('should timeout when some resources are not available and timout option is specified', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -957,7 +967,7 @@ describe('api', function () {
       });
     });
 
-    it('should succeed when file resources are not available in reverse mode', function (done) {
+    itFrozen('should succeed when file resources are not available in reverse mode', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -1001,7 +1011,7 @@ describe('api', function () {
       });
     });
 
-    it('should timeout when file resources are available in reverse mode', function (done) {
+    itFrozen('should timeout when file resources are available in reverse mode', function (done) {
       temp.mkdir({}, function (err, dirPath) {
         if (err) return done(err);
         const opts = {
@@ -1058,7 +1068,7 @@ describe('api', function () {
       });
     });
 
-    it('should time out (no TypeError) for a tcp IPv6 with no listener (#141)', function (done) {
+    itFrozen('should time out (no TypeError) for a tcp IPv6 with no listener (#141)', function (done) {
       waitOn({ resources: ['tcp:[::1]:3029'], timeout: 800, interval: 100, tcpTimeout: 200, window: 100 }, function (err) {
         expect(err).to.be.ok;
         expect(err.message).to.have.string('Timed out');
