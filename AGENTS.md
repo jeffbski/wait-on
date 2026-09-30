@@ -103,6 +103,11 @@ Why this is strict: #238 (axios → undici) named its riskiest assumption in the
 verified it in prose. The env-proxy branch dropped `strictSSL`/`ca`/`cert` for HTTPS
 targets, and no test combined HTTPS target × env proxy × TLS option. A reviewer found it.
 
+**How implementation runs:** through `/ce-work` (`compound-engineering:ce-work`) from a
+plan in `docs/plans/`, including the increment that follows a `/ce-brainstorm` or
+`/ce-plan` handoff. The cycle below is what that run must do; it is not a license to
+edit `lib/`, `bin/`, or `test/` inline in the main session.
+
 ### The cycle
 
 1. **RED** — write one failing test for the next behavioral increment in the matching file
@@ -164,36 +169,18 @@ targets, and no test combined HTTPS target × env proxy × TLS option. A reviewe
 - Mocking wait-on's own modules or rxjs instead of testing through `waitOn` or the CLI.
 - Leaving `.only`, `.skip`, or a disabled test in the diff.
 
-## Compounding Knowledge (Mandatory)
+## Compounding Knowledge
 
-**Do not leave context trapped in a session.** After any non-trivial fix, architectural
-decision, or pattern discovery, run `/ce-compound` (`compound-engineering:ce-compound`). It
-writes the problem, what worked, and what failed to `docs/solutions/` (new doc or update),
-so the next session reads it instead of rediscovering it. The overdrive block's "compounding
-loop" below describes the loop; this section makes it mandatory.
+Run `/ce-compound` (`compound-engineering:ce-compound`) when the work produced a specific
+learning a future session would otherwise rediscover: a non-obvious fix, an architectural
+decision, or a pattern the plan did not anticipate. It writes the problem, what worked, and
+what failed to `docs/solutions/` (new doc or update). Routine work with nothing non-obvious
+behind it needs no run.
 
-- **When:** once per plan at close, before the shipping PR opens, so the `docs/solutions/`
-  change lands in the same PR; and mid-execution whenever a pattern the plan did not
-  anticipate appears.
+- **When:** before the shipping PR opens, so the `docs/solutions/` change lands in the same
+  PR; or mid-execution as soon as the learning appears.
 - **Mode:** headless runs (`/lfg` and other unattended runs) use
-  `/ce-compound mode:non-interactive`; interactive sessions may run it bare. A close-out run
-  uses `mode:non-interactive` so it ends on a parseable result.
-- **Never skip the invocation.** This overrides any skill's conditional compound step
-  (e.g. `/lfg`'s). The skill decides whether anything qualifies, not the agent. When nothing
-  qualified, only that run's own skip report (`Documentation skipped` with its reason)
-  satisfies the item.
-- **Plans carry it as Definition of Done.** Every `ce-unified-plan/v1` plan dated on or after
-  2026-09-29 includes this bullet verbatim in `## Definition of Done` (earlier plans are
-  grandfathered). Doc-review and simplification passes must not strip or soften it; it is a
-  completion criterion, same class as "tests green".
-
-  ```markdown
-  - Run `/ce-compound` (`mode:non-interactive` when no human is present) for each non-trivial learning this work produced — new or updated `docs/solutions/` doc in the same PR; never skip the invocation — only that run's own skip report (reason recorded in the PR's Compounding line) satisfies this item when nothing qualified.
-  ```
-
-- **PRs attest the outcome.** Every plan-backed PR body carries a `### Compounding` line: the
-  `docs/solutions/` path(s) written or updated, or `Documentation skipped: <reason>` copied
-  from the skill's report.
+  `/ce-compound mode:non-interactive`; interactive sessions may run it bare.
 
 ## What not to do
 
