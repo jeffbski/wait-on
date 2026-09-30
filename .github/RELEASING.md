@@ -160,13 +160,17 @@ needs a fresh confirmation. There is no fixed soak period.
 
 ### Ship a 9.x fix after 10.0.0
 
-1. Only after `10.0.0` is on `latest`, create `9.x` from the last 9 tag:
-   `git push origin v9.5.1^{commit}:refs/heads/9.x`. A `9.x` created earlier can't release anything.
+1. Only after `10.0.0` is on `latest`, create `9.x` from the **latest published** 9 tag (not
+   necessarily `v9.5.1`: 9.x releases may have shipped from `master` during the rc):
+   `TAG=$(git tag -l 'v9.*' --sort=-v:refname | head -1)` then
+   `git push origin "$TAG^{commit}:refs/heads/9.x"`. A `9.x` created before 10.0.0 can't release
+   anything, and one cut from an older tag computes a version that is already published.
 2. Cherry-pick this repo's release-channels `ci:` commit onto `9.x` first (`git cherry-pick -x`),
    so the branch has the new triggers and branch config. It releases nothing on its own.
 3. Open a PR against `9.x` with the fix cherry-picked (`git cherry-pick -x`), keeping its `fix:`
    subject. Fix `master` separately if it needs the same change.
-4. Approve the **Release** run on `9.x`. It publishes `9.5.2` to dist-tag `release-9.x`. `latest`
+4. Approve the **Release** run on `9.x`. It publishes the next patch after that tag (for example
+   `9.5.2`) to dist-tag `release-9.x`. `latest`
    stays on 10.x, and users on `^9` get the fix through normal semver resolution.
 
 Use `9.x` (patch and minor), not `9.5.x` (patch only), unless a 9.x minor must be ruled out.
