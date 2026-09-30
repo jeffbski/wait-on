@@ -25,7 +25,6 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint \"lib/**/*.js\" \"test/**/*.js\" \"bin/wait-on\"",
-    "publish:next": "npm publish --tag next && npm view",
     "test": "npm run lint && npm run test:types && npm run test:mocha",
     "test:coverage": "nyc npm run test:mocha",
     "test:mocha": "mocha --exit \"test/**/*.mocha.js\"",
