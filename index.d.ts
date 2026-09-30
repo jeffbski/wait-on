@@ -43,7 +43,11 @@ declare namespace waitOn {
     /** Per-attempt timeout in ms for `command:` resources; a command still running at this bound is killed and the next poll retries. 0 disables the limit. @default 0 */
     commandTimeout?: number;
 
-    /** HTTP proxy configuration. Set to false to disable. @default undefined */
+    /**
+     * HTTP proxy. Pass an object for an explicit proxy, `false` to connect
+     * directly, or leave unset to honor the HTTP(S)_PROXY / NO_PROXY environment
+     * variables (via undici's EnvHttpProxyAgent). @default undefined
+     */
     proxy?: false | WaitOnProxyOptions;
     /** HTTP Basic auth credentials. */
     auth?: WaitOnAuth;
