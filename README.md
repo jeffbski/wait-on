@@ -12,7 +12,7 @@ wait-on can also be used in reverse mode which waits for resources to NOT be ava
 
 ## Installation
 
-wait-on supports the Node.js versions that are active or in maintenance. See the list here: https://nodejs.org/en/about/releases/
+wait-on requires Node.js >=22.19 — it uses the built-in `fetch` with an `undici` dispatcher rather than axios. It supports the Node.js versions that are active or in maintenance. See the list here: https://nodejs.org/en/about/releases/
 
 
 ```bash
@@ -295,7 +295,7 @@ waitOn(opts, [cb]) - function which triggers resource checks
 
 ### localhost and IPv6
 
-On Node.js 20+ `localhost` resolves to both IPv4 and IPv6 and wait-on connects to whichever address the service is actually listening on, because Node enables `autoSelectFamily` (Happy Eyeballs) by default. On older Node.js versions `localhost` may resolve to `::1` (IPv6) only, so a service bound to `127.0.0.1` (IPv4) can appear unavailable. If that happens, use `127.0.0.1` explicitly or upgrade to Node.js 20+.
+On wait-on's supported Node.js versions (>=22.19) `localhost` resolves to both IPv4 and IPv6 and wait-on connects to whichever address the service is actually listening on, because Node enables `autoSelectFamily` (Happy Eyeballs) by default.
 
 ## Goals
 
