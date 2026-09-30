@@ -103,6 +103,11 @@ Why this is strict: #238 (axios → undici) named its riskiest assumption in the
 verified it in prose. The env-proxy branch dropped `strictSSL`/`ca`/`cert` for HTTPS
 targets, and no test combined HTTPS target × env proxy × TLS option. A reviewer found it.
 
+**How implementation runs:** through `/ce-work` (`compound-engineering:ce-work`) from a
+plan in `docs/plans/`, including the increment that follows a `/ce-brainstorm` or
+`/ce-plan` handoff. The cycle below is what that run must do; it is not a license to
+edit `lib/`, `bin/`, or `test/` inline in the main session.
+
 ### The cycle
 
 1. **RED** — write one failing test for the next behavioral increment in the matching file
