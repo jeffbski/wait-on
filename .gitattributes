@@ -1,0 +1,3 @@
+*.feature text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf

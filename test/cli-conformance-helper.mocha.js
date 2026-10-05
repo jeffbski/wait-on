@@ -63,6 +63,12 @@ describe('cli-conformance harness helper (#246)', function () {
     });
   });
 
+  describe('TOLERANCE_MS', function () {
+    it('allows 100ms early and 1000ms late for subprocess timing', function () {
+      expect(h.TOLERANCE_MS).to.deep.equal({ early: 100, late: 1000 });
+    });
+  });
+
   describe('runCli', function () {
     it('spawns the CLI and reports a non-zero exit + elapsed time on timeout', async function () {
       const res = await h.runCli(h.FAST_OPTS.concat(['tcp:127.0.0.1:1'])); // nothing listening -> timeout

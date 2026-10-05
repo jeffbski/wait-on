@@ -66,11 +66,17 @@ has syntax worth failing fast on.
 ## Commands
 
 - `npm test` — the full check: `npm run lint && npm run test:mocha`.
-- `npm run lint` — eslint over `lib/**/*.js`, `test/**/*.js`, `bin/wait-on`
+- `npm run lint` — eslint over `lib/**/*.js`, `test/**/*.js`, `features/**/*.js`, `cucumber.js`,
+  `bin/wait-on`
   (flat config `eslint.config.mjs`).
 - `npm run test:mocha` — `mocha --exit "test/**/*.mocha.js"` (`--exit` is required: spun-up
   test servers leave open handles).
 - `npm run test:coverage` — nyc + mocha.
+- `npm run contract` — the consumer contract: cucumber-js runs `features/*.feature` against the
+  packed working tree, installed into the `features/fixtures/{cjs,esm,ts}` projects. Pass
+  cucumber flags after `--` (`--tags`, `--name`, `--world-parameters '{"package":"<tgz|spec>"}'`).
+- `npm run contract:9` — the same contract against the published `wait-on@9.5.1`, minus
+  `@since:10` scenarios.
 - Node engines floor is `>=20.0.0` on master.
 
 ## Conventions
@@ -168,6 +174,87 @@ edit `lib/`, `bin/`, or `test/` inline in the main session.
 - Skipping RED verification: writing test and code together, never seeing the failure.
 - Mocking wait-on's own modules or rxjs instead of testing through `waitOn` or the CLI.
 - Leaving `.only`, `.skip`, or a disabled test in the diff.
+
+## Consumer contract
+
+`features/*.feature` is the executable contract for projects that use `wait-on` as a library
+or CLI. Each scenario states concrete values (outcome, error name and message, stderr line,
+exit code, elapsed bounds). cucumber-js (`cucumber.js`, strict: an undefined or pending step
+fails) installs the package once per run into fresh temp copies of the fixture projects.
+
+- **Layout.** `features/*.feature`; step code, hooks and servers in `features/support/`
+  (the only `require` path, so fixture runners never load as steps); consumer projects in
+  `features/fixtures/{cjs,esm,ts}`; committed test-only TLS material in `features/fixtures/tls`.
+- **Package.** The `package` world parameter: unset packs the working tree, `*.tgz` installs a
+  tarball, anything else is an npm spec. A `name@x.y.z` spec must install exactly that version,
+  or `BeforeAll` fails.
+- **Fixtures.** `cjs/run.js` is the full runner: JSON options and an optional `--callback` in,
+  one JSON result line out (`outcome`, `errorName`, `errorMessage`, `cbCalls`, `cbArg`,
+  `cbSync`, `returned`, `elapsedMs`) after any log output; a string `validateStatus` is the body
+  of `function (status)`. It reports at `beforeExit`, or exits shortly after settling when a
+  handle keeps the process alive (9.5.1 leaves an unanswered request open); in callback form it
+  first waits out the wait's timeout so a late second callback is counted. `esm/run.mjs` and
+  `ts/run.ts` (compiled once per run, `@types/node` at the locked version) run the Promise form;
+  `esm/named.mjs` is the named import that must fail.
+- **Tags.** Layers `@api`, `@cli`, `@engine`, `@consumer`; `@kind:good` / `@kind:bad` pair what
+  works with how it fails; `@fixture:<cjs|esm|ts>` pins a scenario's fixture (default `cjs`);
+  `@since:10` marks a 10-only guarantee (gate below); `@engines:multi` scenarios are excluded;
+  `@route:js` / `@route:none` are inert text kept from the spike.
+- **Placeholders.** Steps fill `<tmp>`, `<port>` (and other server vars such as `<proxy>`) and
+  `<resource N>` (the Nth resource the scenario declared) into inputs, and map actual values
+  back before comparing output; log lines read `wait-on(<pid>)`. CLI output keeps resource
+  strings and maps only the vars.
+- **Clock and env.** Real clock with the `TOLERANCE_MS` bounds from
+  `test/helpers/cli-conformance.js` (subprocess runs, the TDD Clock exception). Servers use
+  `listen(0)`. Children get the proxy variables (`HTTP(S)_PROXY`, `ALL_PROXY`, `NO_PROXY`,
+  `npm_config_*proxy`) scrubbed, plus only what the scenario sets.
+- **Offline.** Both commands need the registry: the tarball's dependencies, and `wait-on@9.5.1`.
+- **PEMs.** Regenerate all seven files together (the CA keys are discarded; 100-year validity,
+  so no rotation):
+
+  ```sh
+  cd features/fixtures/tls
+  T=$(mktemp -d)
+  ca() { openssl req -x509 -newkey rsa:2048 -nodes -keyout "$2" -out "$1" -days 36500 -subj "/CN=$3" \
+    -addext basicConstraints=critical,CA:TRUE -addext keyUsage=critical,keyCertSign,cRLSign; }
+  leaf() { # out key cn extfile
+    openssl req -newkey rsa:2048 -nodes -keyout "$2" -out "$T/req.csr" -subj "/CN=$3"
+    openssl x509 -req -in "$T/req.csr" -CA ca.pem -CAkey "$T/ca-key.pem" -CAcreateserial \
+      -CAserial "$T/ca.srl" -out "$1" -days 36500 -extfile "$4"
+  }
+  ca ca.pem "$T/ca-key.pem" "wait-on test CA"
+  ca other-ca.pem "$T/other-ca-key.pem" "wait-on other CA"
+  printf 'basicConstraints=critical,CA:FALSE\nsubjectAltName=DNS:localhost,IP:127.0.0.1,IP:::1\nextendedKeyUsage=serverAuth\n' > "$T/server.ext"
+  printf 'basicConstraints=critical,CA:FALSE\nextendedKeyUsage=clientAuth\n' > "$T/client.ext"
+  leaf server.pem server-key.pem localhost "$T/server.ext"
+  leaf client.pem client-key.pem "wait-on test client" "$T/client.ext"
+  openssl pkcs8 -topk8 -v2 aes-256-cbc -in client-key.pem -out client-key-encrypted.pem -passout pass:wait-on-test-passphrase
+  rm -rf "$T"
+  ```
+
+### Release gate (9.5.1 vs 10.x)
+
+At RC time, pack the candidate and run
+`npm run contract -- --world-parameters '{"package":"<rc tgz>"}'` and `npm run contract:9`.
+To (re)assign `@since:10`, run the whole suite on 9.5.1 with no tag filter:
+`npm run contract -- --world-parameters '{"package":"wait-on@9.5.1"}'`. Re-run each failure
+with `--name`; only a failure that reproduces counts. Verdict per scenario:
+
+- red on 10.x, green on 9.5.1: **regression**, blocks GA. Never tag it.
+- red on both: **harness defect**; fix the scenario or step (never `lib/`) before reading verdicts.
+- red on 9.5.1 only on an elapsed bound: harness defect (tolerance), never `@since:10`.
+- red on 9.5.1 on a cucumber step or hook timeout: harness defect until a direct run of the
+  fixture shows 9.5.1 itself misbehaving
+  (`docs/solutions/test-failures/contract-runner-hangs-on-9-5-1-open-handle.md`).
+- green on 10.x, red on 9.5.1: **intentional change**. Tag `@since:10` with a one-line
+  `# 9.5.1: <behavior it replaces>` directly above the tag line. The PR body lists those lines;
+  each becomes a BREAKING or fixed release-note entry.
+- a scenario pinning a known open 10.x defect that is red on 9.5.1 is tagged `@since:10` only to
+  keep `contract:9` green, its comment reads `# 9.5.1: <observed> — 10.x pins a known defect here
+  (<name>), not an intentional change`, and it is not a release-note change.
+
+`npm run contract:9 -- --tags @since:10` must run zero scenarios (tag expressions combine
+with `and`).
 
 ## Compounding Knowledge
 

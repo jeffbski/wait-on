@@ -97,6 +97,9 @@ const I = 100; // -i poll interval (ms)
 const W = 100; // -w stability window (ms)
 const APPEAR = 250; // delay before a "later" resource is made available (ms)
 const FAST_OPTS = ['-t', String(T), '-i', String(I), '-w', String(W)];
+// subprocess elapsed bounds [expected - early, expected + late]: early covers timer
+// clamping, late covers node startup and module load on the slowest CI row
+const TOLERANCE_MS = Object.freeze({ early: 100, late: 1000 });
 
 module.exports = {
   resolveCli,
@@ -109,5 +112,6 @@ module.exports = {
   I,
   W,
   APPEAR,
-  FAST_OPTS
+  FAST_OPTS,
+  TOLERANCE_MS
 };
