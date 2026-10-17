@@ -488,6 +488,23 @@ describe('https/tls and proxy parity', function () {
       });
     });
 
+    // fetch dropped Authorization on a cross-origin redirect; the redirect interceptor must too.
+    it('should not send opts.auth to a different origin after a redirect', async function () {
+      const seen = {};
+      const other = await new Promise((resolve) => listenHttp((req, res) => {
+        seen.other = req.headers.authorization;
+        res.end('ok');
+      }, resolve));
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        seen.first = req.headers.authorization;
+        res.writeHead(302, { Location: `http://localhost:${other}/` });
+        res.end();
+      }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/`], auth: { username: 'u', password: 'p' }, ...FAST });
+      expect(seen.first).to.equal('Basic ' + Buffer.from('u:p').toString('base64'));
+      expect(seen).to.have.property('other', undefined);
+    });
+
     // fetch followed 20 redirects and only failed on a 21st.
     it('should succeed when the final 2xx comes after exactly 20 redirects', async function () {
       const port = await new Promise((resolve) => listenHttp((req, res) => {
