@@ -6,6 +6,7 @@ const http = require('http');
 const path = require('path');
 const temp = require('temp');
 const mkdirp = require('mkdirp');
+const { listenBadPort } = require('./helpers/bad-port');
 
 const mocha = require('mocha');
 const describe = mocha.describe;
@@ -101,20 +102,11 @@ describe('cli', function () {
     });
   });
 
-  // #260: 6000 is on the WHATWG Fetch bad-port list; the probe must still reach it.
+  // #260: the probe must reach a port on the WHATWG Fetch bad-port list.
   it('should exit 0 when an http resource listens on a Fetch bad-list port', async function () {
-    const server = http.createServer((req, res) => res.end('ok'));
-    try {
-      await new Promise((resolve, reject) => {
-        server.once('error', reject);
-        server.listen(6000, '127.0.0.1', resolve);
-      });
-    } catch (err) {
-      if (err.code === 'EADDRINUSE' || err.code === 'EACCES') this.skip(); // port held elsewhere
-      throw err;
-    }
-    httpServer = server;
-    const code = await new Promise((resolve) => execCLI(['http://127.0.0.1:6000/'].concat(FAST_OPTS), {}).on('exit', resolve));
+    httpServer = http.createServer((req, res) => res.end('ok'));
+    const port = await listenBadPort(httpServer);
+    const code = await new Promise((resolve) => execCLI([`http://127.0.0.1:${port}/`].concat(FAST_OPTS), {}).on('exit', resolve));
     expect(code).to.equal(0);
   });
 

@@ -13,6 +13,7 @@ const http = require('http');
 const net = require('net');
 const https = require('https');
 const { execSync } = require('child_process');
+const { listenBadPort } = require('./helpers/bad-port');
 
 const mocha = require('mocha');
 const describe = mocha.describe;
@@ -353,20 +354,11 @@ describe('https/tls and proxy parity', function () {
   // #260: undici fetch refuses WHATWG Fetch "bad ports" (6000, 5060, 6665-6669, 10080, ...)
   // before connecting; axios (9.x) did not. These pin that an http probe reaches them.
   describe('Fetch bad-list ports (#260)', function () {
-    const BAD_PORT = 6000;
-
-    // Listen on the bad-list port; skip (not fail) when another process holds it.
-    async function listenBadPort(ctx, server, host = '127.0.0.1') {
-      try {
-        await new Promise((resolve, reject) => {
-          server.once('error', reject);
-          server.listen(BAD_PORT, host, resolve);
-        });
-      } catch (err) {
-        if (err.code === 'EADDRINUSE' || err.code === 'EACCES') ctx.skip();
-        throw err;
-      }
+    // Listen on the first free bad-list port and register the server for teardown.
+    async function listenBad(server, host) {
+      const port = await listenBadPort(server, host);
       servers.push(server);
+      return port;
     }
 
     function counting(handler) {
@@ -412,29 +404,29 @@ describe('https/tls and proxy parity', function () {
 
     it('should succeed when an http HEAD resource listens on a bad-list port', async function () {
       const target = counting((req, res) => res.end('ok'));
-      await listenBadPort(this, target);
-      await waitOn({ resources: [`http://127.0.0.1:${BAD_PORT}/`], ...FAST });
+      const badPort = await listenBad(target);
+      await waitOn({ resources: [`http://127.0.0.1:${badPort}/`], ...FAST });
       expect(target.hits).to.be.above(0);
     });
 
     it('should succeed when an http-get resource listens on a bad-list port', async function () {
       const target = counting((req, res) => res.end('ok'));
-      await listenBadPort(this, target);
-      await waitOn({ resources: [`http-get://127.0.0.1:${BAD_PORT}/`], ...FAST });
+      const badPort = await listenBad(target);
+      await waitOn({ resources: [`http-get://127.0.0.1:${badPort}/`], ...FAST });
       expect(target.hits).to.be.above(0);
     });
 
     it('should succeed when an https resource with ca and strictSSL listens on a bad-list port', async function () {
       const target = https.createServer({ key, cert }, (req, res) => res.end('ok'));
-      await listenBadPort(this, target, 'localhost');
-      await waitOn({ resources: [`https://localhost:${BAD_PORT}/`], strictSSL: true, ca: cert, ...FAST });
+      const badPort = await listenBad(target, 'localhost');
+      await waitOn({ resources: [`https://localhost:${badPort}/`], strictSSL: true, ca: cert, ...FAST });
     });
 
     it('should follow a redirect onto a bad-list port when followRedirect is true', async function () {
       const target = counting((req, res) => res.end('ok'));
-      await listenBadPort(this, target);
+      const badPort = await listenBad(target);
       const port = await new Promise((resolve) => listenHttp((req, res) => {
-        res.writeHead(302, { Location: `http://127.0.0.1:${BAD_PORT}/` });
+        res.writeHead(302, { Location: `http://127.0.0.1:${badPort}/` });
         res.end();
       }, resolve));
       await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
@@ -443,9 +435,9 @@ describe('https/tls and proxy parity', function () {
 
     it('should hand a 3xx from a bad-list port to validateStatus when followRedirect is false', async function () {
       const target = counting((req, res) => { res.writeHead(302, { Location: '/elsewhere' }); res.end(); });
-      await listenBadPort(this, target);
+      const badPort = await listenBad(target);
       await waitOn({
-        resources: [`http://127.0.0.1:${BAD_PORT}/`],
+        resources: [`http://127.0.0.1:${badPort}/`],
         followRedirect: false,
         validateStatus: (status) => status === 302,
         ...FAST
@@ -534,10 +526,10 @@ describe('https/tls and proxy parity', function () {
 
     it('should route a bad-list port target through an explicit proxy object', async function () {
       const target = counting((req, res) => res.end('ok'));
-      await listenBadPort(this, target);
+      const badPort = await listenBad(target);
       const proxy = await listenCountingProxy();
       await waitOn({
-        resources: [`http://127.0.0.1:${BAD_PORT}/`],
+        resources: [`http://127.0.0.1:${badPort}/`],
         proxy: { host: '127.0.0.1', port: proxy.address().port, protocol: 'http' },
         ...FAST
       });
@@ -547,14 +539,14 @@ describe('https/tls and proxy parity', function () {
 
     it('should route a bad-list port target through HTTP_PROXY from the env', async function () {
       const target = counting((req, res) => res.end('ok'));
-      await listenBadPort(this, target);
+      const badPort = await listenBad(target);
       const proxy = await listenCountingProxy();
       const names = ['HTTP_PROXY', 'http_proxy', 'NO_PROXY', 'no_proxy'];
       const prior = Object.fromEntries(names.map((n) => [n, process.env[n]]));
       names.forEach((n) => delete process.env[n]);
       process.env.HTTP_PROXY = `http://127.0.0.1:${proxy.address().port}`;
       try {
-        await waitOn({ resources: [`http://127.0.0.1:${BAD_PORT}/`], ...FAST });
+        await waitOn({ resources: [`http://127.0.0.1:${badPort}/`], ...FAST });
       } finally {
         names.forEach((n) => { if (prior[n] === undefined) delete process.env[n]; else process.env[n] = prior[n]; });
       }
