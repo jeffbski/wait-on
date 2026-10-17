@@ -488,6 +488,22 @@ describe('https/tls and proxy parity', function () {
       });
     });
 
+    // fetch cancelled a rejected body at once; waiting for a non-2xx body that never ends
+    // would hold the only poll slot (simultaneous: 1, no httpTimeout) until the timeout.
+    it('should succeed when an earlier non-2xx GET response never ends its body', async function () {
+      const healthyAt = Date.now() + 500;
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        if (Date.now() >= healthyAt) return res.end('ok');
+        res.writeHead(503);
+        res.write('x'); // never ended
+      }, resolve));
+      try {
+        await waitOn({ resources: [`http-get://localhost:${port}/`], simultaneous: 1, ...FAST });
+      } finally {
+        servers.forEach((s) => s.closeAllConnections());
+      }
+    });
+
     it('should route a bad-list port target through an explicit proxy object', async function () {
       const target = counting((req, res) => res.end('ok'));
       await listenBadPort(this, target);
