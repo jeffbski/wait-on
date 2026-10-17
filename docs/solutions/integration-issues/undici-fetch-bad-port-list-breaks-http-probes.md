@@ -43,11 +43,12 @@ Use undici's non-Fetch API on the same dispatcher (jeffbski/wait-on#260, pending
 
 ```js
 const requestDispatcher = followRedirect
-  ? dispatcher.compose(interceptors.redirect({ maxRedirections: 20, throwOnMaxRedirect: true }))
+  ? dispatcher.compose(interceptors.redirect({ maxRedirections: 21, throwOnMaxRedirect: true }))
   : dispatcher;
 const { origin, pathname, search } = new URL(url);
 const { statusCode, body } = await requestDispatcher.request({ origin, path: pathname + search, method, headers, signal });
-// ok -> await body.arrayBuffer() (same signal keeps httpTimeout over the body); else body.dump()
+// ok -> await body.arrayBuffer() (same signal keeps httpTimeout over the body);
+// else body.on('error', () => {}).destroy()
 ```
 
 Leaving fetch also drops behavior fetch supplied implicitly. Restore each one deliberately
@@ -56,7 +57,8 @@ and give it a test, or the swap regresses something else:
 | fetch did this implicitly | restored with |
 |---|---|
 | `accept: */*`, `user-agent: undici` default headers (some servers/WAFs 403/406 without them) | defaults under caller headers, matched case-insensitively |
-| fails after 20 redirects | `throwOnMaxRedirect: true` (undici otherwise hands the 21st 3xx to `validateStatus`) |
+| fails after 20 redirects | `throwOnMaxRedirect: true` (undici otherwise hands the 21st 3xx to `validateStatus`) with `maxRedirections: 21`, because undici counts the final response: at 20, a 2xx after exactly 20 redirects fails with `max redirects` |
+| `res.body.cancel()` drops a rejected body at once | `body.destroy()` with an `error` listener (destroy emits `RequestAbortedError`); not `body.dump()`, which waits for the body to end, so a non-2xx body that never ends holds the poll slot until timeout |
 | refuses a URL with userinfo | explicit throw (`dispatcher.request` would drop the credentials and send) |
 | `redirect: 'manual'` leaves the 3xx | no redirect interceptor when `followRedirect: false` |
 
@@ -65,6 +67,10 @@ and a caller `Host` header is sent as given. `res.statusText` does not exist on
 `dispatcher.request`; the verbose line uses `http.STATUS_CODES`.
 
 ## Prevention
+
+Pin both boundaries with tests: a 2xx after exactly 20 redirects resolves, and a non-2xx GET
+whose body never ends does not stall the wait. Code review of PR #262 found both after the
+first version of this fix shipped `maxRedirections: 20` and `body.dump()`.
 
 Test http probes on at least one Fetch bad-list port (6000 with skip-on-`EADDRINUSE`, since
 macOS XQuartz may hold it), through every dispatcher branch: direct, explicit proxy, env proxy,
