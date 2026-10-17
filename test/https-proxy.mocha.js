@@ -488,6 +488,17 @@ describe('https/tls and proxy parity', function () {
       });
     });
 
+    // fetch followed 20 redirects and only failed on a 21st.
+    it('should succeed when the final 2xx comes after exactly 20 redirects', async function () {
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        const hop = Number(req.url.slice(1)) || 0;
+        if (hop === 20) return res.end('ok');
+        res.writeHead(302, { Location: `/${hop + 1}` });
+        res.end();
+      }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
+    });
+
     // fetch cancelled a rejected body at once; waiting for a non-2xx body that never ends
     // would hold the only poll slot (simultaneous: 1, no httpTimeout) until the timeout.
     it('should succeed when an earlier non-2xx GET response never ends its body', async function () {
