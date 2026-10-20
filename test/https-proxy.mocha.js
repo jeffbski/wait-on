@@ -11,6 +11,7 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 const https = require('https');
+const net = require('net');
 const { execSync } = require('child_process');
 
 const mocha = require('mocha');
@@ -19,6 +20,7 @@ const it = mocha.it;
 const before = mocha.before;
 const after = mocha.after;
 const afterEach = mocha.afterEach;
+const beforeEach = mocha.beforeEach;
 const chai = require('chai');
 const expect = chai.expect;
 
@@ -237,6 +239,67 @@ describe('https/tls and proxy parity', function () {
       done(e);
     }
     expect(threw).to.equal(false);
+  });
+
+  // ---- env proxy x https target x TLS option ----
+  // With no proxy option, an https target tunnels through HTTPS_PROXY (or HTTP_PROXY,
+  // undici's fallback) and strictSSL/ca must still govern the tunnelled handshake.
+  // Each case asserts the stub proxy saw a CONNECT, so a direct connection cannot pass.
+  describe('through an env proxy', function () {
+    const PROXY_VARS = ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy'];
+    let savedEnv;
+    beforeEach(function () {
+      savedEnv = {};
+      PROXY_VARS.forEach((name) => { savedEnv[name] = process.env[name]; delete process.env[name]; });
+    });
+    afterEach(function () {
+      PROXY_VARS.forEach((name) => {
+        if (savedEnv[name] === undefined) delete process.env[name]; else process.env[name] = savedEnv[name];
+      });
+    });
+
+    function listenConnectProxy(cb) {
+      const proxy = { connects: 0 };
+      const server = http.createServer();
+      server.on('connect', (req, clientSocket) => {
+        proxy.connects++;
+        const [host, port] = req.url.split(':');
+        const upstream = net.connect(Number(port), host, () => {
+          clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+          upstream.pipe(clientSocket);
+          clientSocket.pipe(upstream);
+        });
+        upstream.on('error', () => clientSocket.destroy());
+        clientSocket.on('error', () => upstream.destroy());
+      });
+      servers.push(server);
+      server.listen(0, '127.0.0.1', () => cb(`http://127.0.0.1:${server.address().port}`, proxy));
+    }
+
+    ['HTTPS_PROXY', 'HTTP_PROXY'].forEach(function (envVar) {
+      [
+        { label: 'strictSSL is false', opts: () => ({ strictSSL: false }), ok: true },
+        { label: 'strictSSL is true and the matching ca is supplied', opts: () => ({ strictSSL: true, ca: cert }), ok: true },
+        { label: 'strictSSL is true without a ca', opts: () => ({ strictSSL: true }), ok: false }
+      ].forEach(function ({ label, opts, ok }) {
+        it(`should ${ok ? 'succeed' : 'fail'} via ${envVar} on an https self-signed target when ${label}`, function (done) {
+          listenHttps((req, res) => { res.end('ok'); }, function (port) {
+            listenConnectProxy(function (proxyUrl, proxy) {
+              process.env[envVar] = proxyUrl;
+              waitOn({ resources: [`https://localhost:${port}/`], ...opts(), ...FAST }, function (err) {
+                try {
+                  expect(proxy.connects).to.be.above(0); // the request tunnelled through the env proxy
+                  if (ok) expect(err).to.not.be.ok; else expect(err).to.be.ok;
+                  done();
+                } catch (e) {
+                  done(e);
+                }
+              });
+            });
+          });
+        });
+      });
+    });
   });
 
   // ---- B2: opts.auth -> Basic header, axios parity ----
