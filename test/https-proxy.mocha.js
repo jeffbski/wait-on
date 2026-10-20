@@ -373,15 +373,17 @@ describe('https/tls and proxy parity', function () {
       const sockets = new Set();
       const proxy = http.createServer((req, res) => {
         proxy.hits++;
+        proxy.urls.push(req.url);
         const target = new URL(req.url);
         const upstream = http.request(
-          { host: target.hostname, port: target.port, path: target.pathname + target.search, method: req.method, headers: req.headers },
+          { host: target.hostname, port: target.port, path: req.url.slice(target.origin.length), method: req.method, headers: req.headers },
           (r) => { res.writeHead(r.statusCode, r.headers); r.pipe(res); }
         );
         upstream.on('error', () => { res.statusCode = 502; res.end(); });
         req.pipe(upstream);
       });
       proxy.hits = 0;
+      proxy.urls = [];
       proxy.on('connect', (req, clientSocket, head) => {
         proxy.hits++;
         const idx = req.url.lastIndexOf(':');
@@ -532,6 +534,22 @@ describe('https/tls and proxy parity', function () {
       expect([seen.http[0], seen.https[0]]).to.deep.equal([HTTP_ENC, HTTPS_ENC]);
     });
 
+    it('should send accept-encoding identity under a Range header over https', async function () {
+      const seen = [];
+      const port = await encodingServer(listenHttps, seen);
+      await waitOn({ resources: [`https://localhost:${port}/`], headers: { Range: 'bytes=0-' }, ca: cert, ...FAST });
+      expect(seen[0]).to.equal('identity');
+    });
+
+    it('should send accept-encoding identity under a Range header on every redirect hop', async function () {
+      const seen = { http: [], https: [] };
+      const ports = {};
+      ports.https = await encodingServer(listenHttps, seen.https);
+      ports.http = await encodingServer(listenHttp, seen.http, () => `https://localhost:${ports.https}/ok`);
+      await waitOn({ resources: [`http://localhost:${ports.http}/`], headers: { Range: 'bytes=0-' }, ca: cert, ...FAST });
+      expect([seen.http[0], seen.https[0]]).to.deep.equal(['identity', 'identity']);
+    });
+
     it('should send accept-encoding identity when the caller sets a Range header', async function () {
       const seen = [];
       const port = await encodingServer(listenHttp, seen);
@@ -564,6 +582,29 @@ describe('https/tls and proxy parity', function () {
         expect(seen.slice(0, 2)).to.deep.equal(['/', expected]);
       });
     }
+
+    // The path saved from one hop's Location must only be sent on the hop it was for: after
+    // A /first? redirects cross-origin to B /second, B must get /second, not /first?.
+    it('should not reuse a saved empty-query path on a later cross-origin hop', async function () {
+      const seen = { a: [], b: [] };
+      const b = await new Promise((resolve) => listenHttp((req, res) => { seen.b.push(req.url); res.end('ok'); }, resolve));
+      const a = await new Promise((resolve) => listenHttp((req, res) => {
+        seen.a.push(req.url);
+        if (req.url === '/') { res.writeHead(302, { Location: '/first?' }); return res.end(); }
+        res.writeHead(302, { Location: `http://localhost:${b}/second` });
+        res.end();
+      }, resolve));
+      await waitOn({ resources: [`http://localhost:${a}/`], ...FAST });
+      expect(seen.a.slice(0, 2)).to.deep.equal(['/', '/first?']);
+      expect(seen.b[0]).to.equal('/second');
+    });
+
+    it('should hand a 3xx without Location to validateStatus instead of following it', async function () {
+      const seen = [];
+      const port = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.url); res.writeHead(302); res.end(); }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/a?`], validateStatus: (status) => status === 302, ...FAST });
+      expect(seen).to.deep.equal(['/a?']);
+    });
 
     it('should keep an empty query on a cross-origin redirect hop', async function () {
       const seen = [];
@@ -678,6 +719,46 @@ describe('https/tls and proxy parity', function () {
       }
       expect(proxy.hits).to.be.above(0);
       expect(target.hits).to.be.above(0);
+    });
+
+    // A redirect hop through a proxy: the per-hop interceptors must still set the hop's
+    // path and accept-encoding when ProxyAgent / EnvHttpProxyAgent carry the request.
+    async function redirectingTarget() {
+      const seen = [];
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        seen.push([req.url, req.headers['accept-encoding']]);
+        if (req.url === '/') { res.writeHead(302, { Location: '/final?' }); return res.end(); }
+        res.end('ok');
+      }, resolve));
+      return { port, seen };
+    }
+
+    it('should keep the empty query and accept-encoding on a redirect hop through the proxy option', async function () {
+      const target = await redirectingTarget();
+      const proxy = await listenCountingProxy();
+      await waitOn({
+        resources: [`http://localhost:${target.port}/`],
+        proxy: { host: '127.0.0.1', port: proxy.address().port, protocol: 'http' },
+        ...FAST
+      });
+      expect(proxy.urls.slice(0, 2)).to.deep.equal([`http://localhost:${target.port}/`, `http://localhost:${target.port}/final?`]);
+      expect(target.seen.slice(0, 2)).to.deep.equal([['/', HTTP_ENC], ['/final?', HTTP_ENC]]);
+    });
+
+    it('should keep the empty query and accept-encoding on a redirect hop through HTTP_PROXY', async function () {
+      const target = await redirectingTarget();
+      const proxy = await listenCountingProxy();
+      const names = ['HTTP_PROXY', 'http_proxy', 'NO_PROXY', 'no_proxy'];
+      const prior = Object.fromEntries(names.map((n) => [n, process.env[n]]));
+      names.forEach((n) => delete process.env[n]);
+      process.env.HTTP_PROXY = `http://127.0.0.1:${proxy.address().port}`;
+      try {
+        await waitOn({ resources: [`http://localhost:${target.port}/`], ...FAST });
+      } finally {
+        names.forEach((n) => { if (prior[n] === undefined) delete process.env[n]; else process.env[n] = prior[n]; });
+      }
+      expect(proxy.urls.slice(0, 2)).to.deep.equal([`http://localhost:${target.port}/`, `http://localhost:${target.port}/final?`]);
+      expect(target.seen.slice(0, 2)).to.deep.equal([['/', HTTP_ENC], ['/final?', HTTP_ENC]]);
     });
 
     it('should tunnel an https bad-list port target through an explicit proxy object', async function () {
