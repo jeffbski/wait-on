@@ -541,10 +541,10 @@ describe('https/tls and proxy parity', function () {
       });
     }
 
-    // Redirect targets follow 9.x (follow-redirects), not fetch: undici's redirect interceptor
-    // rebuilds pathname + search, so a Location's empty `?` is dropped on the hop.
-    for (const location of ['/final?', '/final?#frag']) {
-      it(`should request /final after a redirect to ${location}`, async function () {
+    // fetch requested a redirect Location's path and query as written too: an empty `?` is
+    // kept and a #fragment dropped. undici's redirect interceptor alone would drop the `?`.
+    for (const [location, expected] of [['/final?', '/final?'], ['/final?#frag', '/final?'], ['/final?a=1', '/final?a=1'], ['/final#frag', '/final']]) {
+      it(`should request ${expected} after a redirect to ${location}`, async function () {
         const seen = [];
         const port = await new Promise((resolve) => listenHttp((req, res) => {
           seen.push(req.url);
@@ -552,9 +552,20 @@ describe('https/tls and proxy parity', function () {
           res.end('ok');
         }, resolve));
         await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
-        expect(seen.slice(0, 2)).to.deep.equal(['/', '/final']);
+        expect(seen.slice(0, 2)).to.deep.equal(['/', expected]);
       });
     }
+
+    it('should keep an empty query on a cross-origin redirect hop', async function () {
+      const seen = [];
+      const other = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.url); res.end('ok'); }, resolve));
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        res.writeHead(302, { Location: `http://localhost:${other}/final?` });
+        res.end();
+      }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
+      expect(seen[0]).to.equal('/final?');
+    });
 
     // fetch failed after 20 redirects; a 3xx at the cap must not reach validateStatus.
     it('should fail an endless redirect chain even when validateStatus accepts 3xx', function (done) {
