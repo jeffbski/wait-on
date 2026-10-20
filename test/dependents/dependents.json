@@ -33,10 +33,13 @@
     "repo": "https://github.com/argos-ci/jest-puppeteer.git",
     "tag": "v11.0.0",
     "swap": "overrides",
-    "scripts": true,
-    "build": ["npm run build"],
-    "run": ["node node_modules/jest/bin/jest.js --runInBand packages/jest-dev-server"],
-    "os": ["linux"],
+    "scripts": false,
+    "build": [
+      "npm exec --yes --ignore-scripts --package=puppeteer@25.15.0 -- puppeteer browsers install chrome@131.0.6778.204",
+      "npm run build"
+    ],
+    "run": ["npm test -- packages/jest-environment-puppeteer packages/expect-puppeteer"],
+    "os": ["linux", "darwin"],
     "optional": true
   }
 ]

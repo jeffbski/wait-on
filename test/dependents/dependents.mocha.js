@@ -30,16 +30,27 @@ const manifestWith = (patch) => JSON.stringify([Object.assign({}, VALID, patch)]
 const names = (entries) => entries.map((e) => e.name);
 
 describe('dependents: manifest', function () {
-  it('should parse the committed manifest into the anchor and the optional linux entry', function () {
+  it('should parse the committed manifest into the anchor and the optional unix entry', function () {
     const entries = dependents.parseManifest(manifestText());
     expect(names(entries)).to.eql(['start-server-and-test', 'jest-dev-server']);
     const [sst, jds] = entries;
     expect(sst).to.include({ tag: 'v3.0.12', swap: 'install', scripts: false, optional: false });
     expect(sst.os).to.eql([]);
     expect(sst.build).to.eql([]);
-    expect(jds).to.include({ tag: 'v11.0.0', swap: 'overrides', scripts: true, optional: true });
-    expect(jds.os).to.eql(['linux']);
-    expect(jds.build).to.eql(['npm run build']);
+    expect(jds).to.include({ tag: 'v11.0.0', swap: 'overrides', scripts: false, optional: true });
+    expect(jds.os).to.eql(['linux', 'darwin']);
+    // install scripts off, and Chrome comes from a newer puppeteer CLI: the pinned puppeteer 23
+    // unzips Chrome only partly on Node 24+ and still exits 0
+    expect(jds.build).to.eql([
+      'npm exec --yes --ignore-scripts --package=puppeteer@25.15.0 -- puppeteer browsers install chrome@131.0.6778.204',
+      'npm run build'
+    ]);
+  });
+
+  // jest-dev-server's own package has no tests; its consumers' suites call waitOn
+  it('should run the jest-puppeteer suites that start a server through jest-dev-server', function () {
+    const jds = dependents.parseManifest(manifestText())[1];
+    expect(jds.run).to.eql(['npm test -- packages/jest-environment-puppeteer packages/expect-puppeteer']);
   });
 
   it('should run the anchor spec and demo scripts, never its npm test', function () {
@@ -92,7 +103,7 @@ describe('dependents: select', function () {
   it('should add optional entries on their own OS only', function () {
     const opts = { includeOptional: true };
     expect(names(dependents.select(entries(), opts, 'linux'))).to.eql(['start-server-and-test', 'jest-dev-server']);
-    expect(names(dependents.select(entries(), opts, 'darwin'))).to.eql(['start-server-and-test']);
+    expect(names(dependents.select(entries(), opts, 'darwin'))).to.eql(['start-server-and-test', 'jest-dev-server']);
     expect(names(dependents.select(entries(), opts, 'win32'))).to.eql(['start-server-and-test']);
   });
 
@@ -101,8 +112,8 @@ describe('dependents: select', function () {
   });
 
   it('should refuse an --only entry on an OS it does not support', function () {
-    expect(() => dependents.select(entries(), { only: 'jest-dev-server' }, 'darwin')).to.throw(
-      /jest-dev-server.*linux.*darwin/
+    expect(() => dependents.select(entries(), { only: 'jest-dev-server' }, 'win32')).to.throw(
+      /jest-dev-server.*linux, darwin.*win32/
     );
   });
 
@@ -124,7 +135,7 @@ describe('dependents: list', function () {
     expect(lines).to.include('  npm run demo-multiple');
     const header = (name) => lines.find((l) => l.startsWith(name));
     expect(header('start-server-and-test')).to.match(/\ball\b/);
-    expect(header('jest-dev-server')).to.match(/\blinux\b/);
+    expect(header('jest-dev-server')).to.match(/\blinux,darwin\b/);
   });
 });
 
@@ -185,7 +196,7 @@ describe('dependents: commands', function () {
 
   it('should install from the lockfile, ignoring scripts unless the entry allows them', function () {
     expect(dependents.installArgs(sst)).to.eql(['ci', '--ignore-scripts']);
-    expect(dependents.installArgs(jds)).to.eql(['ci']);
+    expect(dependents.installArgs(Object.assign({}, jds, { scripts: true }))).to.eql(['ci']);
   });
 
   describe('swap matrix', function () {
