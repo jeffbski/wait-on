@@ -457,17 +457,33 @@ describe('https/tls and proxy parity', function () {
       });
     });
 
-    // fetch sent accept and user-agent by default (axios did too); some servers and WAFs
-    // reject requests without them, so leaving fetch must not drop them.
-    it('should send default accept and user-agent headers, letting caller headers win', async function () {
+    // fetch sent accept, accept-language and user-agent by default (axios sent accept and
+    // user-agent too); some servers and WAFs reject requests without them, so leaving fetch
+    // must not drop them.
+    it('should send default accept, accept-language and user-agent headers, letting caller headers win', async function () {
       const seen = [];
       const port = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.headers); res.end('ok'); }, resolve));
       await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
-      expect(seen[0]).to.include({ accept: '*/*', 'user-agent': 'undici' });
+      expect(seen[0]).to.include({ accept: '*/*', 'accept-language': '*', 'user-agent': 'undici' });
       seen.length = 0;
-      await waitOn({ resources: [`http://localhost:${port}/a`], headers: { 'User-Agent': 'probe', Accept: 'text/plain' }, ...FAST });
-      expect(seen[0]).to.include({ accept: 'text/plain', 'user-agent': 'probe' });
+      await waitOn({
+        resources: [`http://localhost:${port}/a`],
+        headers: { 'User-Agent': 'probe', Accept: 'text/plain', 'Accept-Language': 'en' },
+        ...FAST
+      });
+      expect(seen[0]).to.include({ accept: 'text/plain', 'accept-language': 'en', 'user-agent': 'probe' });
     });
+
+    // fetch sent the url's path and query as written, keeping an explicitly empty `?`
+    // and dropping any #fragment.
+    for (const [suffix, expected] of [['/health?', '/health?'], ['/health?a=1', '/health?a=1'], ['/health#frag', '/health']]) {
+      it(`should request ${expected} for a ${suffix} url`, async function () {
+        const seen = [];
+        const port = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.url); res.end('ok'); }, resolve));
+        await waitOn({ resources: [`http://localhost:${port}${suffix}`], ...FAST });
+        expect(seen[0]).to.equal(expected);
+      });
+    }
 
     // fetch failed after 20 redirects; a 3xx at the cap must not reach validateStatus.
     it('should fail an endless redirect chain even when validateStatus accepts 3xx', function (done) {

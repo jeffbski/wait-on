@@ -56,7 +56,8 @@ and give it a test, or the swap regresses something else:
 
 | fetch did this implicitly | restored with |
 |---|---|
-| `accept: */*`, `user-agent: undici` default headers (some servers/WAFs 403/406 without them) | defaults under caller headers, matched case-insensitively |
+| `accept: */*`, `accept-language: *`, `user-agent: undici` default headers (some servers/WAFs 403/406 without them) | defaults under caller headers, matched case-insensitively |
+| sends the path as written, keeping an explicitly empty query (`/health?`) | path sliced from `href` after `origin`, minus any `#fragment`; `pathname + search` drops the `?` because `search` is `''` |
 | fails after 20 redirects | `throwOnMaxRedirect: true` (undici otherwise hands the 21st 3xx to `validateStatus`) with `maxRedirections: 21`, because undici counts the final response: at 20, a 2xx after exactly 20 redirects fails with `max redirects` |
 | `res.body.cancel()` drops a rejected body at once | `body.destroy()` with an `error` listener (destroy emits `RequestAbortedError`); not `body.dump()`, which waits for the body to end, so a non-2xx body that never ends holds the poll slot until timeout |
 | refuses a URL with userinfo | explicit throw (`dispatcher.request` would drop the credentials and send) |
