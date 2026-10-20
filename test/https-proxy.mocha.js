@@ -508,20 +508,38 @@ describe('https/tls and proxy parity', function () {
       await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
     });
 
+    it('should fail when the final 2xx comes after 21 redirects', function (done) {
+      listenHttp((req, res) => {
+        const hop = Number(req.url.slice(1)) || 0;
+        if (hop === 21) return res.end('ok');
+        res.writeHead(302, { Location: `/${hop + 1}` });
+        res.end();
+      }, function (port) {
+        waitOn({ resources: [`http://localhost:${port}/`], timeout: 800, interval: 100, window: 100 }, function (err) {
+          expect(err).to.be.ok;
+          expect(err.message).to.match(/Timed out/);
+          done();
+        });
+      });
+    });
+
     // fetch cancelled a rejected body at once; waiting for a non-2xx body that never ends
     // would hold the only poll slot (simultaneous: 1, no httpTimeout) until the timeout.
     it('should succeed when an earlier non-2xx GET response never ends its body', async function () {
       const healthyAt = Date.now() + 500;
+      let stalled = 0;
       const port = await new Promise((resolve) => listenHttp((req, res) => {
         if (Date.now() >= healthyAt) return res.end('ok');
         res.writeHead(503);
         res.write('x'); // never ended
+        stalled++;
       }, resolve));
       try {
         await waitOn({ resources: [`http-get://localhost:${port}/`], simultaneous: 1, ...FAST });
       } finally {
         servers.forEach((s) => s.closeAllConnections());
       }
+      expect(stalled).to.be.above(0);
     });
 
     it('should route a bad-list port target through an explicit proxy object', async function () {
@@ -552,6 +570,34 @@ describe('https/tls and proxy parity', function () {
       }
       expect(proxy.hits).to.be.above(0);
       expect(target.hits).to.be.above(0);
+    });
+
+    it('should tunnel an https bad-list port target through an explicit proxy object', async function () {
+      const target = https.createServer({ key, cert }, (req, res) => res.end('ok'));
+      const badPort = await listenBad(target, 'localhost');
+      const proxy = await listenCountingProxy();
+      await waitOn({
+        resources: [`https://localhost:${badPort}/`],
+        proxy: { host: '127.0.0.1', port: proxy.address().port, protocol: 'http' },
+        strictSSL: true,
+        ca: cert,
+        ...FAST
+      });
+      expect(proxy.hits).to.be.above(0);
+    });
+
+    it('should succeed in reverse mode once a bad-list port server closes', async function () {
+      const target = counting((req, res) => res.end('ok'));
+      const badPort = await listenBadPort(target);
+      let closedAt;
+      setTimeout(() => {
+        closedAt = Date.now();
+        target.close();
+        target.closeAllConnections();
+      }, 500);
+      await waitOn({ resources: [`http://127.0.0.1:${badPort}/`], reverse: true, ...FAST });
+      expect(target.hits).to.be.above(0);
+      expect(closedAt).to.be.a('number');
     });
   });
 });
