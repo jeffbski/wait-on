@@ -474,6 +474,28 @@ describe('https/tls and proxy parity', function () {
       expect(seen[0]).to.include({ accept: 'text/plain', 'accept-language': 'en', 'user-agent': 'probe' });
     });
 
+    // fetch and axios both sent accept-encoding; a server that answers 406 without it must
+    // still resolve, for HEAD and GET.
+    for (const scheme of ['http', 'http-get']) {
+      it(`should succeed for ${scheme} when the server returns 406 without accept-encoding`, async function () {
+        const seen = [];
+        const port = await new Promise((resolve) => listenHttp((req, res) => {
+          seen.push(req.headers['accept-encoding']);
+          res.statusCode = req.headers['accept-encoding'] ? 200 : 406;
+          res.end();
+        }, resolve));
+        await waitOn({ resources: [`${scheme}://localhost:${port}/`], ...FAST });
+        expect(seen[0]).to.equal('gzip, deflate');
+      });
+    }
+
+    it('should send the caller accept-encoding instead of the default', async function () {
+      const seen = [];
+      const port = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.headers['accept-encoding']); res.end('ok'); }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/`], headers: { 'Accept-Encoding': 'identity' }, ...FAST });
+      expect(seen[0]).to.equal('identity');
+    });
+
     // fetch sent the url's path and query as written, keeping an explicitly empty `?`
     // and dropping any #fragment.
     for (const [suffix, expected] of [['/health?', '/health?'], ['/health?a=1', '/health?a=1'], ['/health#frag', '/health']]) {
