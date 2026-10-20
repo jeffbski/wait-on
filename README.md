@@ -12,7 +12,7 @@ wait-on can also be used in reverse mode which waits for resources to NOT be ava
 
 ## Installation
 
-wait-on requires Node.js >=22.19 — it uses the built-in `fetch` with an `undici` dispatcher rather than axios. It supports the Node.js versions that are active or in maintenance. See the list here: https://nodejs.org/en/about/releases/
+wait-on requires Node.js >=22.19 — it makes HTTP checks with `undici` (`dispatcher.request`, not `fetch`, so Fetch bad-list ports such as 6000 stay reachable) rather than axios. It supports the Node.js versions that are active or in maintenance. See the list here: https://nodejs.org/en/about/releases/
 
 
 ```bash

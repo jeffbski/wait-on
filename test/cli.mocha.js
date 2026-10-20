@@ -6,6 +6,7 @@ const http = require('http');
 const path = require('path');
 const temp = require('temp');
 const mkdirp = require('mkdirp');
+const { listenBadPort } = require('./helpers/bad-port');
 
 const mocha = require('mocha');
 const describe = mocha.describe;
@@ -99,6 +100,14 @@ describe('cli', function () {
       expect(code).to.equal(0);
       done();
     });
+  });
+
+  // #260: the probe must reach a port on the WHATWG Fetch bad-port list.
+  it('should exit 0 when an http resource listens on a Fetch bad-list port', async function () {
+    httpServer = http.createServer((req, res) => res.end('ok'));
+    const port = await listenBadPort(httpServer);
+    const code = await new Promise((resolve) => execCLI([`http://127.0.0.1:${port}/`].concat(FAST_OPTS), {}).on('exit', resolve));
+    expect(code).to.equal(0);
   });
 
   it('should succeed when http resources become available later via redirect', function (done) {
