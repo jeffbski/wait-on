@@ -523,6 +523,15 @@ describe('https/tls and proxy parity', function () {
       expect([seen.http[0], seen.https[0]]).to.deep.equal(['br', 'br']);
     });
 
+    it('should send accept-encoding by scheme when followRedirect is false', async function () {
+      const seen = { http: [], https: [] };
+      const httpPort = await encodingServer(listenHttp, seen.http);
+      const httpsPort = await encodingServer(listenHttps, seen.https);
+      await waitOn({ resources: [`http://localhost:${httpPort}/`], followRedirect: false, ...FAST });
+      await waitOn({ resources: [`https://localhost:${httpsPort}/`], followRedirect: false, ca: cert, ...FAST });
+      expect([seen.http[0], seen.https[0]]).to.deep.equal([HTTP_ENC, HTTPS_ENC]);
+    });
+
     it('should send accept-encoding identity when the caller sets a Range header', async function () {
       const seen = [];
       const port = await encodingServer(listenHttp, seen);
