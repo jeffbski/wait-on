@@ -507,6 +507,21 @@ describe('https/tls and proxy parity', function () {
       });
     }
 
+    // Redirect targets follow 9.x (follow-redirects), not fetch: undici's redirect interceptor
+    // rebuilds pathname + search, so a Location's empty `?` is dropped on the hop.
+    for (const location of ['/final?', '/final?#frag']) {
+      it(`should request /final after a redirect to ${location}`, async function () {
+        const seen = [];
+        const port = await new Promise((resolve) => listenHttp((req, res) => {
+          seen.push(req.url);
+          if (req.url === '/') { res.writeHead(302, { Location: location }); return res.end(); }
+          res.end('ok');
+        }, resolve));
+        await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
+        expect(seen.slice(0, 2)).to.deep.equal(['/', '/final']);
+      });
+    }
+
     // fetch failed after 20 redirects; a 3xx at the cap must not reach validateStatus.
     it('should fail an endless redirect chain even when validateStatus accepts 3xx', function (done) {
       listenHttp((req, res) => { res.writeHead(302, { Location: `/r${Math.random()}` }); res.end(); }, function (port) {
