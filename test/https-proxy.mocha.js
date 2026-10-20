@@ -474,25 +474,59 @@ describe('https/tls and proxy parity', function () {
       expect(seen[0]).to.include({ accept: 'text/plain', 'accept-language': 'en', 'user-agent': 'probe' });
     });
 
-    // fetch and axios both sent accept-encoding; a server that answers 406 without it must
-    // still resolve, for HEAD and GET.
-    for (const scheme of ['http', 'http-get']) {
-      it(`should succeed for ${scheme} when the server returns 406 without accept-encoding`, async function () {
+    // fetch sent accept-encoding per hop by the current url's scheme: `br, gzip, deflate, zstd`
+    // over https, `gzip, deflate` otherwise, `identity` under a Range header. A server that
+    // answers 406 without it must still resolve.
+    const HTTP_ENC = 'gzip, deflate';
+    const HTTPS_ENC = 'br, gzip, deflate, zstd';
+    function encodingServer(listen, seen, redirectTo) {
+      return new Promise((resolve) => listen((req, res) => {
+        seen.push(req.headers['accept-encoding']);
+        if (redirectTo && req.url === '/') { res.writeHead(302, { Location: redirectTo() }); return res.end(); }
+        res.statusCode = req.headers['accept-encoding'] ? 200 : 406;
+        res.end();
+      }, resolve));
+    }
+
+    for (const [scheme, listen, expected] of [
+      ['http', listenHttp, HTTP_ENC],
+      ['http-get', listenHttp, HTTP_ENC],
+      ['https', listenHttps, HTTPS_ENC],
+      ['https-get', listenHttps, HTTPS_ENC]
+    ]) {
+      it(`should send accept-encoding ${expected} for ${scheme} to a server that returns 406 without it`, async function () {
         const seen = [];
-        const port = await new Promise((resolve) => listenHttp((req, res) => {
-          seen.push(req.headers['accept-encoding']);
-          res.statusCode = req.headers['accept-encoding'] ? 200 : 406;
-          res.end();
-        }, resolve));
-        await waitOn({ resources: [`${scheme}://localhost:${port}/`], ...FAST });
-        expect(seen[0]).to.equal('gzip, deflate');
+        const port = await encodingServer(listen, seen);
+        await waitOn({ resources: [`${scheme}://localhost:${port}/`], ca: cert, ...FAST });
+        expect(seen[0]).to.equal(expected);
       });
     }
 
-    it('should send the caller accept-encoding instead of the default', async function () {
+    it('should switch accept-encoding by scheme on http->https and https->http redirect hops', async function () {
+      const seen = { http: [], https: [] };
+      const ports = {};
+      ports.https = await encodingServer(listenHttps, seen.https, () => `http://localhost:${ports.http}/ok`);
+      ports.http = await encodingServer(listenHttp, seen.http, () => `https://localhost:${ports.https}/ok`);
+      await waitOn({ resources: [`http://localhost:${ports.http}/`], ca: cert, ...FAST });
+      expect([seen.http[0], seen.https[0]]).to.deep.equal([HTTP_ENC, HTTPS_ENC]);
+      seen.http.length = seen.https.length = 0;
+      await waitOn({ resources: [`https://localhost:${ports.https}/`], ca: cert, ...FAST });
+      expect([seen.https[0], seen.http[0]]).to.deep.equal([HTTPS_ENC, HTTP_ENC]);
+    });
+
+    it('should send the caller accept-encoding on every redirect hop', async function () {
+      const seen = { http: [], https: [] };
+      const ports = {};
+      ports.https = await encodingServer(listenHttps, seen.https);
+      ports.http = await encodingServer(listenHttp, seen.http, () => `https://localhost:${ports.https}/ok`);
+      await waitOn({ resources: [`http://localhost:${ports.http}/`], headers: { 'Accept-Encoding': 'br' }, ca: cert, ...FAST });
+      expect([seen.http[0], seen.https[0]]).to.deep.equal(['br', 'br']);
+    });
+
+    it('should send accept-encoding identity when the caller sets a Range header', async function () {
       const seen = [];
-      const port = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.headers['accept-encoding']); res.end('ok'); }, resolve));
-      await waitOn({ resources: [`http://localhost:${port}/`], headers: { 'Accept-Encoding': 'identity' }, ...FAST });
+      const port = await encodingServer(listenHttp, seen);
+      await waitOn({ resources: [`http://localhost:${port}/`], headers: { Range: 'bytes=0-' }, ...FAST });
       expect(seen[0]).to.equal('identity');
     });
 
