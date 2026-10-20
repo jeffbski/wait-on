@@ -62,7 +62,7 @@ and give it a test, or the swap regresses something else:
 | `accept: */*`, `accept-language: *`, `user-agent: undici` default headers (some servers/WAFs 403/406 without them) | defaults under caller headers, matched case-insensitively |
 | `accept-encoding`, chosen per request from that request's own url (undici `node_modules/undici/lib/web/fetch/index.js`, `httpNetworkOrCacheFetch`): `br, gzip, deflate, zstd` over https, `gzip, deflate` otherwise, `identity` under a `Range` header, recomputed on every redirect hop. `dispatcher.request` sends none, so a server that answers 406 without it timed out | `fetchAcceptEncoding` in `lib/wait-on.js`, an interceptor composed inside `interceptors.redirect` so it runs on every hop; skipped when the caller sets accept-encoding. The body is destroyed, never decoded, so any value is safe |
 | sends the path as written, keeping an explicitly empty query (`/health?`), on the first request and on every redirect hop | `requestPath` slices `href` after `origin`, minus any `#fragment`; `pathname + search` drops the `?` because `search` is `''`. undici's redirect handler builds hop paths that way, so `keepRedirectQuery` (also inside the redirect interceptor) records the path each 3xx `Location` asked for and sends it on the next hop |
-| fails after 20 redirects (9.x followed 21) | 9.x parity, not fetch: `maxRedirections: 21` with `throwOnMaxRedirect: true` (`lib/wait-on.js:468`), so a 2xx after 21 redirects resolves and a 22nd 3xx fails instead of reaching `validateStatus`. Requires undici `>=8.12.0`; see "The redirect count moved under a caret range" below |
+| fails after 20 redirects (9.x followed 21) | 9.x parity, not fetch: `maxRedirections: 21` with `throwOnMaxRedirect: true` (`lib/wait-on.js:469`), so a 2xx after 21 redirects resolves and a 22nd 3xx fails instead of reaching `validateStatus`. Requires undici `>=8.12.0`; see "The redirect count moved under a caret range" below |
 | `res.body.cancel()` drops a rejected body at once | `body.destroy()` with an `error` listener (destroy emits `RequestAbortedError`); not `body.dump()`, which waits for the body to end, so a non-2xx body that never ends holds the poll slot until timeout |
 | refuses a URL with userinfo | explicit throw (`dispatcher.request` would drop the credentials and send) |
 | `redirect: 'manual'` leaves the 3xx | no redirect interceptor when `followRedirect: false` |
@@ -71,6 +71,14 @@ Accepted deltas, all closer to 9.x than to fetch: undici's redirect handler foll
 a 2xx after 21 redirects resolves, a redirect loop stops at the first repeated URL, and a
 caller `Host` header is sent as given.
 
+One known delta from both: a redirect from a path to the same path plus an empty `?`
+(`/selfq` → `/selfq?`) fails as `Redirect loop detected`. undici's redirect handler builds
+its loop history from `pathname + search`, which drops the empty `?`, so the target equals
+the current URL; `keepRedirectQuery` only changes what is sent on the wire and cannot reach
+that check. fetch (`next`) follows it and resolves. 9.5.1 also fails, but by dropping the `?`
+and re-requesting `/selfq` until its 21-redirect cap. Fixing it means replacing undici's
+redirect interceptor, which is not worth it for a server that redirects to its own URL.
+
 ### Per-hop interceptors
 
 Anything fetch computed per request must run on every redirect hop. `dispatcher.compose`
@@ -78,6 +86,15 @@ applies interceptors first-listed innermost, and `RedirectHandler` dispatches ea
 through the dispatch it was given, so an interceptor listed **before** `interceptors.redirect`
 sees every hop with that hop's `origin` and `path`. It receives fresh opts each time; return
 a copy rather than mutating them, or the change leaks into the redirect handler's own state.
+
+`keepRedirectQuery` keeps one `WeakMap` per dispatcher, keyed by the `RedirectHandler`
+instance, which dispatches every hop of one request. On a 3xx with a `Location` it stores the
+origin and raw path that `Location` resolves to against the URL this hop actually sent. The
+next dispatch through the same handler takes and deletes the entry, and uses its path only
+when its origin equals that hop's `opts.origin`. The origin guard stops a saved path from
+being sent to another server. If a hop ever got no entry of its own, a stale path saved for
+an earlier origin must not be reused after a cross-origin redirect. A test pins this:
+`/` → `/first?` → `http://other/second` must request `/second`.
 
 To observe a hop's response, wrap the handler in a plain object that forwards each hook.
 Do not use a JS `Proxy`, and do not use the deprecated `DecoratorHandler`. `ProxyAgent`
@@ -115,7 +132,9 @@ Pin the boundaries with tests in `test/https-proxy.mocha.js`: a 2xx after 20 and
 redirects resolves, after 22 fails; accept-encoding is fetch's value per scheme
 over http and https and switches on http->https and https->http hops; a redirect to `/final?`
 requests `/final?`, including cross-origin; an explicit and an env proxy still work (they caught
-the `Proxy` recursion above); and a non-2xx GET whose body never
+the `Proxy` recursion above), and a redirect hop through each keeps the empty query and
+accept-encoding; `Range` gives `identity` over https and on every hop; a cross-origin hop
+never reuses a saved path; a 3xx without `Location` reaches `validateStatus`; and a non-2xx GET whose body never
 ends does not stall the wait. Code review of PR #262 found both after the
 first version of this fix shipped `maxRedirections: 20` and `body.dump()`.
 
