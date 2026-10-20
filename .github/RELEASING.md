@@ -132,14 +132,38 @@ Each release branch publishes to its own npm dist-tag:
 Each branch runs the `release.yml` and `.releaserc.json` in its own commits. Before approving the
 first run on a new `next` or `*.x` branch, check that its copies match `master`'s.
 
+### Dependents check
+
+Before approving an rc or GA Release run, run published dependents' own commands against the
+checkout's packed tarball:
+
+```sh
+npm run dependents -- --list               # what will run, no network
+npm run dependents                         # start-server-and-test
+npm run dependents -- --include-optional   # linux/macOS: also jest-dev-server (downloads Chrome)
+```
+
+It needs the network, `git` and `curl` (start-server-and-test's `demo-multiple` runs `curl`).
+Each command runs on the dependent's own wait-on (baseline), then on the tarball. A `regression`
+row (fails on the tarball, passed on baseline) exits 1 and blocks approval until it is fixed or
+the manifest entry (`test/dependents/dependents.json`) is shown to be at fault. `pre-existing`
+rows failed on both and do not block. `--control` adds a run on wait-on 9.5.1, `--tgz <path>`
+tests a given tarball, `--only <name>` runs one entry, and `--keep` keeps the clones.
+
+The optional jest-dev-server row runs jest-puppeteer's suites and needs npm 11.16 or later (an
+older npm skips the overrides swap, which the check reports as a failed swap). Rerun a
+`regression` on that row before believing it: Puppeteer timeouts on a cold Chrome can fail it.
+
 ### Ship a release candidate on `next`
 
 1. Create `next` from `master`: `git push origin origin/master:refs/heads/next`.
 2. Retarget the PR to `next` (`gh pr edit <n> --base next`) and merge it with a **merge commit**.
-3. Approve the **Release** run on `next`. The preview reads `Next release: v10.0.0-rc.1`. It
-   publishes to dist-tag `next`, which replaces the stale `5.1.0-rc.1`.
+3. Run the [dependents check](#dependents-check) on the `next` checkout, then approve the
+   **Release** run on `next`. The preview reads `Next release: v10.0.0-rc.1`. It publishes to
+   dist-tag `next`, which replaces the stale `5.1.0-rc.1`.
 4. Ask users to try `npm i wait-on@next`. Each `fix:`/`feat:` merged to `next` publishes the next
-   rc (`rc.2`, `rc.3`, ...).
+   rc (`rc.2`, `rc.3`, ...). Run the [dependents check](#dependents-check) before approving each
+   of those Release runs too.
 5. Keep `next` current: after each `master` release, merge `master` into `next`. Expect a
    `package.json`/`package-lock.json` conflict; resolve it as described in
    [Version-file conflicts](#version-file-conflicts).
@@ -153,7 +177,8 @@ needs a fresh confirmation. There is no fixed soak period.
    squash body collects the rc `chore(release): ... [skip ci]` subjects and suppresses the run.
 2. Resolve the version-file conflict as described in
    [Version-file conflicts](#version-file-conflicts).
-3. Approve the **Release** run on `master`. It publishes a fresh `10.0.0` to `latest`.
+3. Run the [dependents check](#dependents-check) on the merged `master` checkout, then approve the
+   **Release** run on `master`. It publishes a fresh `10.0.0` to `latest`.
 4. Merge `master` back into `next` (for the next rc cycle), or delete `next` until it's needed.
 5. The `next` dist-tag stays on the last rc until the next rc publishes. Leave it: the maintainer
    can move it with `npm dist-tag add wait-on@10.0.0 next` if needed.

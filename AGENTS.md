@@ -66,11 +66,16 @@ has syntax worth failing fast on.
 ## Commands
 
 - `npm test` — the full check: `npm run lint && npm run test:mocha`.
-- `npm run lint` — eslint over `lib/**/*.js`, `test/**/*.js`, `bin/wait-on`
+- `npm run lint` — eslint over `lib/**/*.js`, `test/**/*.js`, `scripts/**/*.js`, `bin/wait-on`
   (flat config `eslint.config.mjs`).
 - `npm run test:mocha` — `mocha --exit "test/**/*.mocha.js"` (`--exit` is required: spun-up
   test servers leave open handles).
 - `npm run test:coverage` — nyc + mocha.
+- `npm run dependents` — on demand, not in CI (network, fixed ports): `scripts/dependents.js` runs
+  the published dependents in `test/dependents/dependents.json` on their own wait-on, then on the
+  packed tarball, and exits 1 on a regression. Flags: `--list`, `--only <name>`,
+  `--include-optional`, `--control` (9.5.1), `--tgz <path>`, `--keep`. Run before each RC/GA per
+  `.github/RELEASING.md`.
 - Node engines floor is `>=20.0.0` on master.
 
 ## Conventions

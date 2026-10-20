@@ -1,0 +1,45 @@
+[
+  {
+    "name": "start-server-and-test",
+    "repo": "https://github.com/bahmutov/start-server-and-test.git",
+    "tag": "v3.0.12",
+    "swap": "install",
+    "scripts": false,
+    "build": [],
+    "run": [
+      "node node_modules/mocha/bin/mocha.js test/helper src/*-spec.js",
+      "npm run demo",
+      "npm run demo2",
+      "npm run demo3",
+      "npm run demo5",
+      "npm run demo6",
+      "npm run demo7",
+      "npm run demo9",
+      "npm run demo11",
+      "npm run demo12",
+      "npm run demo-multiple",
+      "npm run demo-expect-403",
+      "npm run demo-json-server",
+      "npm run demo-ip6",
+      "npm run demo-timeout",
+      "npm run demo-interval",
+      "npm run demo-commands"
+    ],
+    "os": [],
+    "optional": false
+  },
+  {
+    "name": "jest-dev-server",
+    "repo": "https://github.com/argos-ci/jest-puppeteer.git",
+    "tag": "v11.0.0",
+    "swap": "overrides",
+    "scripts": false,
+    "build": [
+      "npm exec --yes --ignore-scripts --package=puppeteer@25.15.0 -- puppeteer browsers install chrome@131.0.6778.204",
+      "npm run build"
+    ],
+    "run": ["npm test -- packages/jest-environment-puppeteer packages/expect-puppeteer"],
+    "os": ["linux", "darwin"],
+    "optional": true
+  }
+]

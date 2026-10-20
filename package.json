@@ -24,7 +24,8 @@
   },
   "license": "MIT",
   "scripts": {
-    "lint": "eslint \"lib/**/*.js\" \"test/**/*.js\" \"bin/wait-on\"",
+    "dependents": "node scripts/dependents.js",
+    "lint": "eslint \"lib/**/*.js\" \"test/**/*.js\" \"scripts/**/*.js\" \"bin/wait-on\"",
     "test": "npm run lint && npm run test:types && npm run test:mocha",
     "test:coverage": "nyc npm run test:mocha",
     "test:mocha": "mocha --exit \"test/**/*.mocha.js\"",
