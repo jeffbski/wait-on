@@ -1,5 +1,5 @@
 ---
-title: Running the dependents check - proxy asymmetry, npm release-age gates, and shell-free npm
+title: Running the dependents check - proxy asymmetry, npm release-age gates, shell-free npm, and the puppeteer row
 date: 2026-10-05
 category: best-practices
 module: scripts/dependents.js
@@ -11,10 +11,10 @@ applies_when:
   - "Adding a proxy variable, a control version, or a manifest entry to the dependents check"
   - "Porting the check to another runtime or CI host"
 related_components: [test/dependents/dependents.json, .github/RELEASING.md]
-tags: [dependents, npm, proxy, all-proxy, min-release-age, release-check]
+tags: [dependents, npm, proxy, all-proxy, min-release-age, release-check, puppeteer, jest-dev-server]
 ---
 
-# Running the dependents check - proxy asymmetry, npm release-age gates, and shell-free npm
+# Running the dependents check - proxy asymmetry, npm release-age gates, shell-free npm, and the puppeteer row
 
 ## Context
 
@@ -61,6 +61,46 @@ review of it, turned up two environment traps the code alone does not explain.
 - **The run needs `git` and `curl`.** `demo-multiple`, the #260 bad-port control, ends in
   `curl`. On a host without `curl` it fails on both sides and reads `pre-existing`, so the
   run cannot judge the regression it was built to catch.
+- **jest-dev-server has no tests of its own; run the suites that call it.**
+  `packages/jest-dev-server` in argos-ci/jest-puppeteer v11.0.0 reports "No tests found".
+  The suites that exercise wait-on are `jest-environment-puppeteer` and `expect-puppeteer`:
+  their global setup starts the repo's test server through jest-dev-server, which calls
+  `waitOn({ resources: ['tcp:0.0.0.0:4444'], timeout })` and spots a timeout by the message
+  prefix `Timed out waiting for`. The row runs
+  `npm test -- packages/jest-environment-puppeteer packages/expect-puppeteer`, through npm so
+  `node_modules/.bin` (cross-env) is on `PATH`.
+- **Download Chrome with a newer puppeteer CLI, not the pinned puppeteer's installer.**
+  jest-puppeteer v11.0.0 locks puppeteer 23, whose installer unzips Chrome only partly on
+  Node 24 and 26 and still exits 0: a fresh `~/.cache/puppeteer/chrome/<platform>-<v>` held
+  192KB on macOS (Node 26.3) instead of about 300MB, and no `chrome` executable in a
+  `node:24-bookworm` container. The same installer works on Node 22. The suites then fail in
+  global setup with `Could not find Chrome (ver. 131.0.6778.204)`, on baseline and tarball
+  alike, so the row reads `pre-existing`. A warm cache hides all of this, which is why the
+  first macOS runs passed. The entry's first build step runs
+  `npm exec --yes --ignore-scripts --package=puppeteer@25.15.0 -- puppeteer browsers install chrome@131.0.6778.204`:
+  puppeteer 25's CLI extracts correctly, writes the cache path puppeteer 23 reads, and
+  `--ignore-scripts` skips its own postinstall (a second, unused Chrome). Keep the build id in
+  step with the tag's locked puppeteer.
+- **Install with scripts off.** Whether `npm ci` runs puppeteer's postinstall depends on the
+  npm version: npm 11.16 gates it behind `allow-scripts`, npm 11.13 runs it. When it runs, it
+  leaves the half-extracted folder above, and a later install fails with `The browser folder ...
+  exists but the executable ... is missing`. The entry sets `scripts: false`.
+- **The overrides swap needs a recent npm.** npm 11.13 answers `npm pkg set
+  overrides.wait-on=file:<tgz>` plus `npm install` with "up to date" and leaves the workspace
+  package's wait-on at 8.0.1; npm 11.16 and 11.19 apply the override. The `npm ls` guard
+  catches it (`swap incomplete, expected 9.5.1: jest-dev-server > wait-on@8.0.1`) and aborts
+  the entry, so upgrade npm rather than reading the row.
+- **Chrome for Testing ships no linux-arm64 build.** In an arm64 Linux container (OrbStack or
+  Docker Desktop on Apple silicon) the download "succeeds" into `linux_arm-<v>` but holds the
+  x86-64 binary (ELF machine `0x3e`). Run the container with `--platform linux/amd64` so the
+  whole stack matches the browser; the recorded Linux runs used that. The `node:24-bookworm`
+  image also lacks Chrome's shared libraries (`libnss3`, `libgbm1`, `libgtk-3-0` and
+  friends), and Chrome runs there as the image's `node` user; ubuntu CI runners have them.
+- **The puppeteer row is noisier than the anchor, which is why it stays optional.** A cold
+  Chrome can miss the suites' 5000ms test timeout or 500ms element waits, and an earlier research
+  run saw the server miss its 4000ms `launchTimeout` on a first, cold run. Those failures are in Puppeteer, not
+  wait-on; one hit the baseline of a macOS run (`FAIL` baseline, `pass` tarball, `ok`). The
+  same flake on the tarball side reads `regression`, so rerun the row before believing one.
 
 ## Why This Matters
 

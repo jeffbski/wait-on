@@ -140,7 +140,7 @@ checkout's packed tarball:
 ```sh
 npm run dependents -- --list               # what will run, no network
 npm run dependents                         # start-server-and-test
-npm run dependents -- --include-optional   # on linux: also jest-dev-server (downloads Chromium)
+npm run dependents -- --include-optional   # linux/macOS: also jest-dev-server (downloads Chrome)
 ```
 
 It needs the network, `git` and `curl` (start-server-and-test's `demo-multiple` runs `curl`).
@@ -149,6 +149,10 @@ row (fails on the tarball, passed on baseline) exits 1 and blocks approval until
 the manifest entry (`test/dependents/dependents.json`) is shown to be at fault. `pre-existing`
 rows failed on both and do not block. `--control` adds a run on wait-on 9.5.1, `--tgz <path>`
 tests a given tarball, `--only <name>` runs one entry, and `--keep` keeps the clones.
+
+The optional jest-dev-server row runs jest-puppeteer's suites and needs npm 11.16 or later (an
+older npm skips the overrides swap, which the check reports as a failed swap). Rerun a
+`regression` on that row before believing it: Puppeteer timeouts on a cold Chrome can fail it.
 
 ### Ship a release candidate on `next`
 
