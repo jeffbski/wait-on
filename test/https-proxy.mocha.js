@@ -10,8 +10,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
+const net = require('net');
 const https = require('https');
 const { execSync } = require('child_process');
+const { listenBadPort } = require('./helpers/bad-port');
 
 const mocha = require('mocha');
 const describe = mocha.describe;
@@ -347,6 +349,444 @@ describe('https/tls and proxy parity', function () {
         expect(err).to.not.be.ok;
         done();
       });
+    });
+  });
+  // #260: undici fetch refuses WHATWG Fetch "bad ports" (6000, 5060, 6665-6669, 10080, ...)
+  // before connecting; axios (9.x) did not. These pin that an http probe reaches them.
+  describe('Fetch bad-list ports (#260)', function () {
+    // Listen on the first free bad-list port and register the server for teardown.
+    async function listenBad(server, host) {
+      const port = await listenBadPort(server, host);
+      servers.push(server);
+      return port;
+    }
+
+    function counting(handler) {
+      const server = http.createServer((req, res) => { server.hits++; handler(req, res); });
+      server.hits = 0;
+      return server;
+    }
+
+    // Stub forward proxy that counts every request it carries: CONNECT tunnels and
+    // absolute-form plain-http requests both bump `hits`.
+    async function listenCountingProxy() {
+      const sockets = new Set();
+      const proxy = http.createServer((req, res) => {
+        proxy.hits++;
+        proxy.urls.push(req.url);
+        const target = new URL(req.url);
+        const upstream = http.request(
+          { host: target.hostname, port: target.port, path: req.url.slice(target.origin.length), method: req.method, headers: req.headers },
+          (r) => { res.writeHead(r.statusCode, r.headers); r.pipe(res); }
+        );
+        upstream.on('error', () => { res.statusCode = 502; res.end(); });
+        req.pipe(upstream);
+      });
+      proxy.hits = 0;
+      proxy.urls = [];
+      proxy.on('connect', (req, clientSocket, head) => {
+        proxy.hits++;
+        const idx = req.url.lastIndexOf(':');
+        const upstream = net.connect(Number(req.url.slice(idx + 1)), req.url.slice(0, idx), () => {
+          clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+          upstream.write(head);
+          upstream.pipe(clientSocket);
+          clientSocket.pipe(upstream);
+        });
+        sockets.add(clientSocket).add(upstream);
+        upstream.on('error', () => clientSocket.destroy());
+        clientSocket.on('error', () => upstream.destroy());
+      });
+      const close = proxy.close.bind(proxy);
+      proxy.close = (cb) => { sockets.forEach((s) => s.destroy()); return close(cb); };
+      servers.push(proxy);
+      await new Promise((resolve) => proxy.listen(0, '127.0.0.1', resolve));
+      return proxy;
+    }
+
+    it('should succeed when an http HEAD resource listens on a bad-list port', async function () {
+      const target = counting((req, res) => res.end('ok'));
+      const badPort = await listenBad(target);
+      await waitOn({ resources: [`http://127.0.0.1:${badPort}/`], ...FAST });
+      expect(target.hits).to.be.above(0);
+    });
+
+    it('should succeed when an http-get resource listens on a bad-list port', async function () {
+      const target = counting((req, res) => res.end('ok'));
+      const badPort = await listenBad(target);
+      await waitOn({ resources: [`http-get://127.0.0.1:${badPort}/`], ...FAST });
+      expect(target.hits).to.be.above(0);
+    });
+
+    it('should succeed when an https resource with ca and strictSSL listens on a bad-list port', async function () {
+      const target = https.createServer({ key, cert }, (req, res) => res.end('ok'));
+      const badPort = await listenBad(target, 'localhost');
+      await waitOn({ resources: [`https://localhost:${badPort}/`], strictSSL: true, ca: cert, ...FAST });
+    });
+
+    it('should follow a redirect onto a bad-list port when followRedirect is true', async function () {
+      const target = counting((req, res) => res.end('ok'));
+      const badPort = await listenBad(target);
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        res.writeHead(302, { Location: `http://127.0.0.1:${badPort}/` });
+        res.end();
+      }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
+      expect(target.hits).to.be.above(0);
+    });
+
+    it('should hand a 3xx from a bad-list port to validateStatus when followRedirect is false', async function () {
+      const target = counting((req, res) => { res.writeHead(302, { Location: '/elsewhere' }); res.end(); });
+      const badPort = await listenBad(target);
+      await waitOn({
+        resources: [`http://127.0.0.1:${badPort}/`],
+        followRedirect: false,
+        validateStatus: (status) => status === 302,
+        ...FAST
+      });
+      expect(target.hits).to.be.above(0);
+    });
+
+    // fetch rejects a url with userinfo before sending; dispatcher.request would drop the
+    // credentials and send anyway. Keep 10.x behavior: such a url never succeeds.
+    it('should keep failing an http url with userinfo after leaving fetch', function (done) {
+      listenHttp((req, res) => res.end('ok'), function (port) {
+        waitOn({ resources: [`http://user:pass@localhost:${port}/`], timeout: 600, interval: 100, window: 100 }, function (err) {
+          expect(err).to.be.ok;
+          expect(err.message).to.match(/Timed out/);
+          done();
+        });
+      });
+    });
+
+    // fetch sent accept, accept-language and user-agent by default (axios sent accept and
+    // user-agent too); some servers and WAFs reject requests without them, so leaving fetch
+    // must not drop them.
+    it('should send default accept, accept-language and user-agent headers, letting caller headers win', async function () {
+      const seen = [];
+      const port = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.headers); res.end('ok'); }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
+      expect(seen[0]).to.include({ accept: '*/*', 'accept-language': '*', 'user-agent': 'undici' });
+      seen.length = 0;
+      await waitOn({
+        resources: [`http://localhost:${port}/a`],
+        headers: { 'User-Agent': 'probe', Accept: 'text/plain', 'Accept-Language': 'en' },
+        ...FAST
+      });
+      expect(seen[0]).to.include({ accept: 'text/plain', 'accept-language': 'en', 'user-agent': 'probe' });
+    });
+
+    // fetch sent accept-encoding per hop by the current url's scheme: `br, gzip, deflate, zstd`
+    // over https, `gzip, deflate` otherwise, `identity` under a Range header. A server that
+    // answers 406 without it must still resolve.
+    const HTTP_ENC = 'gzip, deflate';
+    const HTTPS_ENC = 'br, gzip, deflate, zstd';
+    function encodingServer(listen, seen, redirectTo) {
+      return new Promise((resolve) => listen((req, res) => {
+        seen.push(req.headers['accept-encoding']);
+        if (redirectTo && req.url === '/') { res.writeHead(302, { Location: redirectTo() }); return res.end(); }
+        res.statusCode = req.headers['accept-encoding'] ? 200 : 406;
+        res.end();
+      }, resolve));
+    }
+
+    for (const [scheme, listen, expected] of [
+      ['http', listenHttp, HTTP_ENC],
+      ['http-get', listenHttp, HTTP_ENC],
+      ['https', listenHttps, HTTPS_ENC],
+      ['https-get', listenHttps, HTTPS_ENC]
+    ]) {
+      it(`should send accept-encoding ${expected} for ${scheme} to a server that returns 406 without it`, async function () {
+        const seen = [];
+        const port = await encodingServer(listen, seen);
+        await waitOn({ resources: [`${scheme}://localhost:${port}/`], ca: cert, ...FAST });
+        expect(seen[0]).to.equal(expected);
+      });
+    }
+
+    it('should switch accept-encoding by scheme on http->https and https->http redirect hops', async function () {
+      const seen = { http: [], https: [] };
+      const ports = {};
+      ports.https = await encodingServer(listenHttps, seen.https, () => `http://localhost:${ports.http}/ok`);
+      ports.http = await encodingServer(listenHttp, seen.http, () => `https://localhost:${ports.https}/ok`);
+      await waitOn({ resources: [`http://localhost:${ports.http}/`], ca: cert, ...FAST });
+      expect([seen.http[0], seen.https[0]]).to.deep.equal([HTTP_ENC, HTTPS_ENC]);
+      seen.http.length = seen.https.length = 0;
+      await waitOn({ resources: [`https://localhost:${ports.https}/`], ca: cert, ...FAST });
+      expect([seen.https[0], seen.http[0]]).to.deep.equal([HTTPS_ENC, HTTP_ENC]);
+    });
+
+    it('should send the caller accept-encoding on every redirect hop', async function () {
+      const seen = { http: [], https: [] };
+      const ports = {};
+      ports.https = await encodingServer(listenHttps, seen.https);
+      ports.http = await encodingServer(listenHttp, seen.http, () => `https://localhost:${ports.https}/ok`);
+      await waitOn({ resources: [`http://localhost:${ports.http}/`], headers: { 'Accept-Encoding': 'br' }, ca: cert, ...FAST });
+      expect([seen.http[0], seen.https[0]]).to.deep.equal(['br', 'br']);
+    });
+
+    it('should send accept-encoding by scheme when followRedirect is false', async function () {
+      const seen = { http: [], https: [] };
+      const httpPort = await encodingServer(listenHttp, seen.http);
+      const httpsPort = await encodingServer(listenHttps, seen.https);
+      await waitOn({ resources: [`http://localhost:${httpPort}/`], followRedirect: false, ...FAST });
+      await waitOn({ resources: [`https://localhost:${httpsPort}/`], followRedirect: false, ca: cert, ...FAST });
+      expect([seen.http[0], seen.https[0]]).to.deep.equal([HTTP_ENC, HTTPS_ENC]);
+    });
+
+    it('should send accept-encoding identity under a Range header over https', async function () {
+      const seen = [];
+      const port = await encodingServer(listenHttps, seen);
+      await waitOn({ resources: [`https://localhost:${port}/`], headers: { Range: 'bytes=0-' }, ca: cert, ...FAST });
+      expect(seen[0]).to.equal('identity');
+    });
+
+    it('should send accept-encoding identity under a Range header on every redirect hop', async function () {
+      const seen = { http: [], https: [] };
+      const ports = {};
+      ports.https = await encodingServer(listenHttps, seen.https);
+      ports.http = await encodingServer(listenHttp, seen.http, () => `https://localhost:${ports.https}/ok`);
+      await waitOn({ resources: [`http://localhost:${ports.http}/`], headers: { Range: 'bytes=0-' }, ca: cert, ...FAST });
+      expect([seen.http[0], seen.https[0]]).to.deep.equal(['identity', 'identity']);
+    });
+
+    it('should send accept-encoding identity when the caller sets a Range header', async function () {
+      const seen = [];
+      const port = await encodingServer(listenHttp, seen);
+      await waitOn({ resources: [`http://localhost:${port}/`], headers: { Range: 'bytes=0-' }, ...FAST });
+      expect(seen[0]).to.equal('identity');
+    });
+
+    // fetch sent the url's path and query as written, keeping an explicitly empty `?`
+    // and dropping any #fragment.
+    for (const [suffix, expected] of [['/health?', '/health?'], ['/health?a=1', '/health?a=1'], ['/health#frag', '/health']]) {
+      it(`should request ${expected} for a ${suffix} url`, async function () {
+        const seen = [];
+        const port = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.url); res.end('ok'); }, resolve));
+        await waitOn({ resources: [`http://localhost:${port}${suffix}`], ...FAST });
+        expect(seen[0]).to.equal(expected);
+      });
+    }
+
+    // fetch requested a redirect Location's path and query as written too: an empty `?` is
+    // kept and a #fragment dropped. undici's redirect interceptor alone would drop the `?`.
+    for (const [location, expected] of [['/final?', '/final?'], ['/final?#frag', '/final?'], ['/final?a=1', '/final?a=1'], ['/final#frag', '/final']]) {
+      it(`should request ${expected} after a redirect to ${location}`, async function () {
+        const seen = [];
+        const port = await new Promise((resolve) => listenHttp((req, res) => {
+          seen.push(req.url);
+          if (req.url === '/') { res.writeHead(302, { Location: location }); return res.end(); }
+          res.end('ok');
+        }, resolve));
+        await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
+        expect(seen.slice(0, 2)).to.deep.equal(['/', expected]);
+      });
+    }
+
+    // The path saved from one hop's Location must only be sent on the hop it was for: after
+    // A /first? redirects cross-origin to B /second, B must get /second, not /first?.
+    it('should not reuse a saved empty-query path on a later cross-origin hop', async function () {
+      const seen = { a: [], b: [] };
+      const b = await new Promise((resolve) => listenHttp((req, res) => { seen.b.push(req.url); res.end('ok'); }, resolve));
+      const a = await new Promise((resolve) => listenHttp((req, res) => {
+        seen.a.push(req.url);
+        if (req.url === '/') { res.writeHead(302, { Location: '/first?' }); return res.end(); }
+        res.writeHead(302, { Location: `http://localhost:${b}/second` });
+        res.end();
+      }, resolve));
+      await waitOn({ resources: [`http://localhost:${a}/`], ...FAST });
+      expect(seen.a.slice(0, 2)).to.deep.equal(['/', '/first?']);
+      expect(seen.b[0]).to.equal('/second');
+    });
+
+    it('should hand a 3xx without Location to validateStatus instead of following it', async function () {
+      const seen = [];
+      const port = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.url); res.writeHead(302); res.end(); }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/a?`], validateStatus: (status) => status === 302, ...FAST });
+      expect(seen).to.deep.equal(['/a?']);
+    });
+
+    it('should keep an empty query on a cross-origin redirect hop', async function () {
+      const seen = [];
+      const other = await new Promise((resolve) => listenHttp((req, res) => { seen.push(req.url); res.end('ok'); }, resolve));
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        res.writeHead(302, { Location: `http://localhost:${other}/final?` });
+        res.end();
+      }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
+      expect(seen[0]).to.equal('/final?');
+    });
+
+    // fetch failed after 20 redirects; a 3xx at the cap must not reach validateStatus.
+    it('should fail an endless redirect chain even when validateStatus accepts 3xx', function (done) {
+      listenHttp((req, res) => { res.writeHead(302, { Location: `/r${Math.random()}` }); res.end(); }, function (port) {
+        waitOn({ resources: [`http://localhost:${port}/`], validateStatus: (s) => s < 400, timeout: 800, interval: 100, window: 100 }, function (err) {
+          expect(err).to.be.ok;
+          expect(err.message).to.match(/Timed out/);
+          done();
+        });
+      });
+    });
+
+    // fetch dropped Authorization on a cross-origin redirect; the redirect interceptor must too.
+    it('should not send opts.auth to a different origin after a redirect', async function () {
+      const seen = {};
+      const other = await new Promise((resolve) => listenHttp((req, res) => {
+        seen.other = req.headers.authorization;
+        res.end('ok');
+      }, resolve));
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        seen.first = req.headers.authorization;
+        res.writeHead(302, { Location: `http://localhost:${other}/` });
+        res.end();
+      }, resolve));
+      await waitOn({ resources: [`http://localhost:${port}/`], auth: { username: 'u', password: 'p' }, ...FAST });
+      expect(seen.first).to.equal('Basic ' + Buffer.from('u:p').toString('base64'));
+      expect(seen).to.have.property('other', undefined);
+    });
+
+    // 9.5.1 (follow-redirects maxRedirects 21) followed 21 redirects and failed on a 22nd.
+    function listenRedirectChain(hops, cb) {
+      listenHttp((req, res) => {
+        const hop = Number(req.url.slice(1)) || 0;
+        if (hop === hops) return res.end('ok');
+        res.writeHead(302, { Location: `/${hop + 1}` });
+        res.end();
+      }, cb);
+    }
+
+    for (const hops of [20, 21]) {
+      it(`should succeed when the final 2xx comes after exactly ${hops} redirects`, async function () {
+        const port = await new Promise((resolve) => listenRedirectChain(hops, resolve));
+        await waitOn({ resources: [`http://localhost:${port}/`], ...FAST });
+      });
+    }
+
+    it('should fail when the final 2xx comes after 22 redirects', function (done) {
+      listenRedirectChain(22, function (port) {
+        waitOn({ resources: [`http://localhost:${port}/`], timeout: 800, interval: 100, window: 100 }, function (err) {
+          expect(err).to.be.ok;
+          expect(err.message).to.match(/Timed out/);
+          done();
+        });
+      });
+    });
+
+    // fetch cancelled a rejected body at once; waiting for a non-2xx body that never ends
+    // would hold the only poll slot (simultaneous: 1, no httpTimeout) until the timeout.
+    it('should succeed when an earlier non-2xx GET response never ends its body', async function () {
+      const healthyAt = Date.now() + 500;
+      let stalled = 0;
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        if (Date.now() >= healthyAt) return res.end('ok');
+        res.writeHead(503);
+        res.write('x'); // never ended
+        stalled++;
+      }, resolve));
+      try {
+        await waitOn({ resources: [`http-get://localhost:${port}/`], simultaneous: 1, ...FAST });
+      } finally {
+        servers.forEach((s) => s.closeAllConnections());
+      }
+      expect(stalled).to.be.above(0);
+    });
+
+    it('should route a bad-list port target through an explicit proxy object', async function () {
+      const target = counting((req, res) => res.end('ok'));
+      const badPort = await listenBad(target);
+      const proxy = await listenCountingProxy();
+      await waitOn({
+        resources: [`http://127.0.0.1:${badPort}/`],
+        proxy: { host: '127.0.0.1', port: proxy.address().port, protocol: 'http' },
+        ...FAST
+      });
+      expect(proxy.hits).to.be.above(0);
+      expect(target.hits).to.be.above(0);
+    });
+
+    it('should route a bad-list port target through HTTP_PROXY from the env', async function () {
+      const target = counting((req, res) => res.end('ok'));
+      const badPort = await listenBad(target);
+      const proxy = await listenCountingProxy();
+      const names = ['HTTP_PROXY', 'http_proxy', 'NO_PROXY', 'no_proxy'];
+      const prior = Object.fromEntries(names.map((n) => [n, process.env[n]]));
+      names.forEach((n) => delete process.env[n]);
+      process.env.HTTP_PROXY = `http://127.0.0.1:${proxy.address().port}`;
+      try {
+        await waitOn({ resources: [`http://127.0.0.1:${badPort}/`], ...FAST });
+      } finally {
+        names.forEach((n) => { if (prior[n] === undefined) delete process.env[n]; else process.env[n] = prior[n]; });
+      }
+      expect(proxy.hits).to.be.above(0);
+      expect(target.hits).to.be.above(0);
+    });
+
+    // A redirect hop through a proxy: the per-hop interceptors must still set the hop's
+    // path and accept-encoding when ProxyAgent / EnvHttpProxyAgent carry the request.
+    async function redirectingTarget() {
+      const seen = [];
+      const port = await new Promise((resolve) => listenHttp((req, res) => {
+        seen.push([req.url, req.headers['accept-encoding']]);
+        if (req.url === '/') { res.writeHead(302, { Location: '/final?' }); return res.end(); }
+        res.end('ok');
+      }, resolve));
+      return { port, seen };
+    }
+
+    it('should keep the empty query and accept-encoding on a redirect hop through the proxy option', async function () {
+      const target = await redirectingTarget();
+      const proxy = await listenCountingProxy();
+      await waitOn({
+        resources: [`http://localhost:${target.port}/`],
+        proxy: { host: '127.0.0.1', port: proxy.address().port, protocol: 'http' },
+        ...FAST
+      });
+      expect(proxy.urls.slice(0, 2)).to.deep.equal([`http://localhost:${target.port}/`, `http://localhost:${target.port}/final?`]);
+      expect(target.seen.slice(0, 2)).to.deep.equal([['/', HTTP_ENC], ['/final?', HTTP_ENC]]);
+    });
+
+    it('should keep the empty query and accept-encoding on a redirect hop through HTTP_PROXY', async function () {
+      const target = await redirectingTarget();
+      const proxy = await listenCountingProxy();
+      const names = ['HTTP_PROXY', 'http_proxy', 'NO_PROXY', 'no_proxy'];
+      const prior = Object.fromEntries(names.map((n) => [n, process.env[n]]));
+      names.forEach((n) => delete process.env[n]);
+      process.env.HTTP_PROXY = `http://127.0.0.1:${proxy.address().port}`;
+      try {
+        await waitOn({ resources: [`http://localhost:${target.port}/`], ...FAST });
+      } finally {
+        names.forEach((n) => { if (prior[n] === undefined) delete process.env[n]; else process.env[n] = prior[n]; });
+      }
+      expect(proxy.urls.slice(0, 2)).to.deep.equal([`http://localhost:${target.port}/`, `http://localhost:${target.port}/final?`]);
+      expect(target.seen.slice(0, 2)).to.deep.equal([['/', HTTP_ENC], ['/final?', HTTP_ENC]]);
+    });
+
+    it('should tunnel an https bad-list port target through an explicit proxy object', async function () {
+      const target = https.createServer({ key, cert }, (req, res) => res.end('ok'));
+      const badPort = await listenBad(target, 'localhost');
+      const proxy = await listenCountingProxy();
+      await waitOn({
+        resources: [`https://localhost:${badPort}/`],
+        proxy: { host: '127.0.0.1', port: proxy.address().port, protocol: 'http' },
+        strictSSL: true,
+        ca: cert,
+        ...FAST
+      });
+      expect(proxy.hits).to.be.above(0);
+    });
+
+    it('should succeed in reverse mode once a bad-list port server closes', async function () {
+      const target = counting((req, res) => res.end('ok'));
+      const badPort = await listenBadPort(target);
+      let closedAt;
+      setTimeout(() => {
+        closedAt = Date.now();
+        target.close();
+        target.closeAllConnections();
+      }, 500);
+      await waitOn({ resources: [`http://127.0.0.1:${badPort}/`], reverse: true, ...FAST });
+      expect(target.hits).to.be.above(0);
+      expect(closedAt).to.be.a('number');
     });
   });
 });

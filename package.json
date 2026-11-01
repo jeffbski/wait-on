@@ -48,7 +48,7 @@
   "dependencies": {
     "joi": "^18.2.9",
     "rxjs": "^7.8.2",
-    "undici": "^8.10.2"
+    "undici": "^8.12.0"
   },
   "keywords": [
     "wait",
